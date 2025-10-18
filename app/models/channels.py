@@ -1,5 +1,7 @@
 from mongoengine import Document, StringField, FloatField, BooleanField
 from ..schemas.channels import Channel
+from datetime import datetime
+
 
 class ChannelDocument(Document):
     meta = {"collection": "channels", "index_background": True}
@@ -22,8 +24,8 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
         "users": document.users.split(",") if document.users else [],
         "channel_type": document.channel_type,
         "is_active": document.is_active,
-        "created_at": document.created_at,
-        "updated_at": document.updated_at,
-        "deleted_at": document.deleted_at,
+        "created_at": datetime.fromtimestamp(document.created_at) if document.created_at else None,
+        "updated_at": datetime.fromtimestamp(document.updated_at) if document.updated_at else None,
+        "deleted_at": datetime.fromtimestamp(document.deleted_at) if document.deleted_at else None,
     }
     return Channel.model_validate(data)

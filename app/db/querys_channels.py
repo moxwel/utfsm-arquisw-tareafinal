@@ -1,5 +1,5 @@
 from mongoengine.errors import DoesNotExist, ValidationError
-from ..models.channels import ChannelDocument, _document_to_channel, _document_to_channel_response
+from ..models.channels import ChannelDocument, _document_to_channel
 from datetime import datetime
 from ..schemas.channels import Channel, ChannelCreate, ChannelUpdate
 import logging
@@ -32,10 +32,13 @@ def get_channel_by_id(channel_id: str) -> Channel | None:
 def get_channels_by_server_id(server_id: str) -> list[Channel]:
     if not server_id:
         return []
-    return [_document_to_channel(doc) for doc in ChannelDocument.objects(server_id=server_id) if _document_to_channel(doc, str(doc.id))]
+    documents = ChannelDocument.objects(server_id=server_id)
+    return [_document_to_channel(doc) for doc in documents]
 
 def update_channel(channel_id: str, update_data: ChannelUpdate) -> Channel | None:
     payload = update_data.model_dump(exclude_unset=True, exclude_none=True)
+    if 'users' in payload and isinstance(payload['users'], list):
+        payload['users'] = ",".join(payload['users'])
     if not channel_id or not payload:
         return None
     try:

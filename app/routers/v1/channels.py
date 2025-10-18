@@ -9,7 +9,6 @@ from ...db.querys_channels import (
     delete_channel,
 )
 from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelDelete
-from ...models.channels import _document_to_channel
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -26,8 +25,8 @@ async def add_channel(channel_data: ChannelCreate):
         if channel is None:
             raise HTTPException(status_code=500, detail="Error al crear el canal.")
         return channel
-    except Exception:
-        raise HTTPException(status_code=500, detail=f"Error al crear el canal.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear el canal: {str(e)}")
 
 
 @router.get("/id/{channel_id}", response_model=Channel)
@@ -38,10 +37,10 @@ async def read_channel(channel_id: str):
         if channel is None:
             raise HTTPException(status_code=404, detail="Canal no encontrado.")
         return channel
-    except (InvalidId, ValidationError):
-        raise HTTPException(status_code=422, detail="ID de canal inválido.")
-    except Exception:
-        raise HTTPException(status_code=500, detail=f"Error interno del servidor.")
+    except (InvalidId, ValidationError) as e:
+        raise HTTPException(status_code=422, detail=f"ID de canal inválido: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 
 @router.get("/server/{server_id}", response_model=list[Channel])
@@ -52,8 +51,8 @@ async def read_channels_by_server(server_id: str):
         return channels
     except (InvalidId, ValidationError):
         raise HTTPException(status_code=422, detail="ID de servidor inválido.")
-    except Exception:
-        raise HTTPException(status_code=500, detail=f"Error interno del servidor.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 
 @router.put("/id/{channel_id}", response_model=Channel)
@@ -64,10 +63,10 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
         if channel is None:
             raise HTTPException(status_code=404, detail="Canal no encontrado o sin datos para actualizar.")
         return channel
-    except (InvalidId, ValidationError):
-        raise HTTPException(status_code=422, detail="ID de canal inválido.")
-    except Exception:
-        raise HTTPException(status_code=500, detail=f"Error al actualizar el canal.")
+    except (InvalidId, ValidationError) as e:
+        raise HTTPException(status_code=422, detail=f"ID de canal inválido: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar el canal: {str(e)}")
 
 
 @router.delete("/id/{channel_id}", response_model=ChannelDelete)
@@ -78,7 +77,7 @@ async def remove_channel(channel_id: str):
         if not success:
             raise HTTPException(status_code=404, detail="Canal no encontrado.")
         return ChannelDelete(id=channel_id, status="desactivado")
-    except (InvalidId, ValidationError):
-        raise HTTPException(status_code=422, detail="ID de canal inválido.")
-    except Exception:
-        raise HTTPException(status_code=500, detail=f"Error al desactivar el canal.")
+    except (InvalidId, ValidationError) as e:
+        raise HTTPException(status_code=422, detail=f"ID de canal inválido: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al desactivar el canal: {str(e)}")
