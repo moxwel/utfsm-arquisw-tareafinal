@@ -10,6 +10,7 @@ from ...db.querys_channels import (
 )
 from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelDelete
 import logging
+from ...events.conn import publish_message, publish_simple_message
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,6 +25,15 @@ async def add_channel(channel_data: ChannelCreate):
         channel = create_channel(channel_data)
         if channel is None:
             raise HTTPException(status_code=500, detail="Error al crear el canal.")
+
+        payload = {"channel_id": str(channel.id), "server_id": channel.server_id}
+        
+        try:
+            await publish_message(payload, "channel.created", "channel_service_exchange")
+        except Exception as e:
+            logger.error(f"Error al publicar mensaje en RabbitMQ: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error al publicar mensaje en RabbitMQ.")
+
         return channel
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear el canal: {str(e)}")
