@@ -1,5 +1,10 @@
 fastapi
 uvicorn
-pymongo
+mongoengine
 aio-pika
 dotenv
+pika
+pytest
+pytest-asyncio
+requests
+logging

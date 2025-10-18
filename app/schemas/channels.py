@@ -1,0 +1,76 @@
+from typing import Optional
+from enum import Enum
+from datetime import datetime
+from pydantic import BaseModel, Field
+
+class ChannelType(str, Enum):
+    PUBLIC = "public"
+    PRIVATE = "private"
+
+class Channel(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    name: str
+    server_id: str
+    users: list[str]
+    is_active: bool = True
+    channel_type: ChannelType = ChannelType.PUBLIC
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    deleted_at: Optional[datetime] = None
+
+    class Config:
+        allow_population_by_field_name = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }
+        schema_extra = {
+            "example": {
+                "name": "general",
+                "server_id": "server123",
+                "users": ["user1", "user2"],
+                "is_active": True,
+                "channel_type": "public",
+            }
+        }
+
+class ChannelCreate(BaseModel):
+    name: str
+    server_id: str
+    users: list[str]  # List of user IDs
+    channel_type: ChannelType = ChannelType.PUBLIC
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "general",
+                "server_id": "server123",
+                "users": ["user1", "user2"],
+                "channel_type": "public",
+            }
+        }
+    
+class ChannelUpdate(BaseModel):
+    name: Optional[str] = None
+    users: Optional[list[str]] = None  # List of user IDs
+    is_active: Optional[bool] = None
+    channel_type: Optional[ChannelType] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "random",
+                "users": ["user1", "user3"],
+                "is_active": False,
+                "channel_type": "private",
+            }
+        }
+
+class ChannelDelete(BaseModel):
+    id: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "60f7c0c2b4d1c8b4f8e4d2a1",
+            }
+        }

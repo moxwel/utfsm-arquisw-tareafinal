@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import items
+from .routers.v1 import items, channels
 from .db.conn import connect_to_mongo, close_mongo_connection
 import logging
 
@@ -17,6 +17,7 @@ def shutdown_event():
     close_mongo_connection()
 
 app.include_router(items.router)
+app.include_router(channels.router)
 
 @app.get("/")
 async def root():

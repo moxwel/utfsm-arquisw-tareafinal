@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from bson.errors import InvalidId
-from ..db.querys import get_all_items, create_item, get_item_by_id
-from ..models.item import Item
+from ...db.querys import get_all_items, create_item, get_item_by_id
+from ...models.item import Item
 
 router = APIRouter(prefix="/items", tags=["items"])
 
