@@ -19,11 +19,11 @@ class Channel(BaseModel):
     deleted_at: Optional[datetime] = None
 
     class Config:
-        allow_population_by_field_name = True
+        validate_by_name = True
         json_encoders = {
             datetime: lambda v: v.isoformat(),
         }
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "general",
                 "server_id": "server123",
@@ -40,7 +40,7 @@ class ChannelCreate(BaseModel):
     channel_type: ChannelType = ChannelType.PUBLIC
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "general",
                 "server_id": "server123",
@@ -56,7 +56,7 @@ class ChannelUpdate(BaseModel):
     channel_type: Optional[ChannelType] = None
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "random",
                 "users": ["user1", "user3"],
@@ -69,7 +69,7 @@ class ChannelDelete(BaseModel):
     id: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "60f7c0c2b4d1c8b4f8e4d2a1",
             }
