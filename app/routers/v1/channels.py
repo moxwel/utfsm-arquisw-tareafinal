@@ -10,16 +10,16 @@ from ...db.querys import (
     db_add_user_to_channel,
     db_remove_user_from_channel,
     get_channels_by_member_id,
+    db_reactivate_channel
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelDelete, AddDeleteUserChannel
+from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, AddDeleteUserChannel
 import logging
-from ...events.conn import publish_message, publish_simple_message
+from ...events.conn import publish_message, publish_message_main, PublishError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/channels", tags=["channels"])
-
 
 @router.post("/", response_model=Channel, status_code=201)
 async def add_channel(channel_data: ChannelCreate):
@@ -29,17 +29,15 @@ async def add_channel(channel_data: ChannelCreate):
         if channel is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear el canal.")
 
-        payload = {"channel_id": str(channel.id), "server_id": channel.server_id}
-        
-        try:
-            await publish_message(payload, "channel.created", "channel_service_exchange")
-        except Exception as e:
-            logger.error(f"Error al publicar mensaje en RabbitMQ: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al publicar mensaje en RabbitMQ.")
+        payload = {"channel_id": channel.id, "name": channel.name, "owner_id": channel.owner_id, "created_at": channel.created_at}
+        await publish_message_main(payload, "channel.created")
 
         return channel
     except HTTPException as exc:
         raise exc
+    except PublishError as e:
+        logger.error(f"Error de publicación en RabbitMQ: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al crear el canal: {str(e)}")
 
@@ -80,30 +78,78 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
         channel = update_channel(channel_id, channel_update)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o sin datos para actualizar.")
+
+        updated_fields = channel_update.model_dump(exclude_unset=True, exclude_none=True)
+        payload = {"channel_id": channel.id, "updated_fields": updated_fields, "updated_at": channel.updated_at}
+        await publish_message_main(payload, "channel.updated")
+
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
+    except PublishError as e:
+        logger.error(f"Error de publicación en RabbitMQ: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al actualizar el canal: {str(e)}")
 
 
-@router.delete("/id/{channel_id}", response_model=ChannelDelete)
+@router.delete("/id/{channel_id}", response_model=ChannelID)
 async def remove_channel(channel_id: str):
     """Desactiva un canal en MongoDB (no lo elimina físicamente)."""
     try:
-        success = delete_channel(channel_id)
-        if not success:
+        channel = get_channel_by_id(channel_id)
+        
+        if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
-        return ChannelDelete(id=channel_id, status="desactivado")
+        
+        if not channel.is_active:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El canal ya está desactivado.")
+        
+        channel = delete_channel(channel_id)
+        
+        payload = {"channel_id": channel_id, "deleted_at": channel.deleted_at}
+        await publish_message_main(payload, "channel.deleted")
+        
+        return ChannelID(id=channel_id, status="desactivado")
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
+    except PublishError as e:
+        logger.error(f"Error de publicación en RabbitMQ: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al desactivar el canal: {str(e)}")
-    
+
+@router.post("/reactivate/{channel_id}", response_model=ChannelID)
+async def reactivate_channel(channel_id: str):
+    """Reactiva un canal desactivado en MongoDB."""
+    try:
+        channel = get_channel_by_id(channel_id)
+        
+        if channel is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
+
+        if channel.is_active:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El canal ya está activo.")
+        
+        channel = db_reactivate_channel(channel_id)
+
+        payload = {"channel_id": channel.id, "reactivated_at": channel.updated_at}
+        await publish_message_main(payload, "channel.reactivated")
+
+        return ChannelID(id=channel.id)
+    except (InvalidId, ValidationError) as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+    except HTTPException as exc:
+        raise exc
+    except PublishError as e:
+        logger.error(f"Error de publicación en RabbitMQ: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al reactivar el canal: {str(e)}")
 
 @router.post("/add_user", response_model=Channel)
 async def add_user_to_channel(channel_id: str, user_id: str):
