@@ -34,17 +34,18 @@ async def add_channel(channel_data: ChannelCreate):
 
 @router.get("/id/{channel_id}", response_model=Channel)
 async def read_channel(channel_id: str):
-    """Obtiene un canal por su ID desde MongoDB."""
     try:
         channel = get_channel_by_id(channel_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return channel
-    except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
-
+    except (InvalidId, ValidationError) as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {exc}") from exc
+    except HTTPException as exc:
+        raise exc
+    except Exception as exc:
+        logger.exception("Error interno al obtener canal")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error interno del servidor") from exc
 
 @router.get("/owner/{owner_id}", response_model=list[Channel])
 async def read_channels_by_owner(owner_id: str):
@@ -54,6 +55,8 @@ async def read_channels_by_owner(owner_id: str):
         return channels
     except (InvalidId, ValidationError):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de servidor inválido.")
+    except HTTPException as exc:
+        raise exc
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
 
@@ -68,6 +71,8 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+    except HTTPException as exc:
+        raise exc
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al actualizar el canal: {str(e)}")
 
@@ -82,6 +87,8 @@ async def remove_channel(channel_id: str):
         return ChannelDelete(id=channel_id, status="desactivado")
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+    except HTTPException as exc:
+        raise exc
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al desactivar el canal: {str(e)}")
     
@@ -96,6 +103,8 @@ async def add_user_to_channel(channel_id: str, user_id: str):
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
+    except HTTPException as exc:
+        raise exc
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al agregar usuario al canal: {str(e)}")
     
@@ -109,6 +118,8 @@ async def remove_user_from_channel(channel_id: str, user_id: str):
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
+    except HTTPException as exc:
+        raise exc
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al eliminar usuario del canal: {str(e)}")
 
@@ -120,5 +131,7 @@ async def read_channels_by_member(user_id: str):
         return channels
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de usuario inválido: {str(e)}")
+    except HTTPException as exc:
+        raise exc
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
