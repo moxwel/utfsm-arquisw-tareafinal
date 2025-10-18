@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from bson.errors import InvalidId
 from mongoengine.errors import ValidationError
-from ...db.querys_channels import (
+from ...db.querys import (
     create_channel,
     get_channel_by_id,
     get_channels_by_owner_id,
