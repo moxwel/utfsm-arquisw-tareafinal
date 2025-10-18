@@ -10,7 +10,7 @@ class ChannelType(str, Enum):
 class Channel(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
     name: str
-    server_id: str
+    owner_id: str
     users: list[str]
     is_active: bool = True
     channel_type: ChannelType = ChannelType.PUBLIC
@@ -26,7 +26,7 @@ class Channel(BaseModel):
         json_schema_extra = {
             "example": {
                 "name": "general",
-                "server_id": "server123",
+                "owner_id": "owner123",
                 "users": ["user1", "user2"],
                 "is_active": True,
                 "channel_type": "public",
@@ -35,7 +35,7 @@ class Channel(BaseModel):
 
 class ChannelCreate(BaseModel):
     name: str
-    server_id: str
+    owner_id: str
     users: list[str]  # List of user IDs
     channel_type: ChannelType = ChannelType.PUBLIC
 
@@ -43,7 +43,7 @@ class ChannelCreate(BaseModel):
         json_schema_extra = {
             "example": {
                 "name": "general",
-                "server_id": "server123",
+                "owner_id": "owner123",
                 "users": ["user1", "user2"],
                 "channel_type": "public",
             }
@@ -51,7 +51,8 @@ class ChannelCreate(BaseModel):
     
 class ChannelUpdate(BaseModel):
     name: Optional[str] = None
-    users: Optional[list[str]] = None  # List of user IDs
+    owner_id: Optional[str] = None
+    users: Optional[list[str]] = None
     is_active: Optional[bool] = None
     channel_type: Optional[ChannelType] = None
 
@@ -59,6 +60,7 @@ class ChannelUpdate(BaseModel):
         json_schema_extra = {
             "example": {
                 "name": "random",
+                "owner_id": "owner456",
                 "users": ["user1", "user3"],
                 "is_active": False,
                 "channel_type": "private",
@@ -72,5 +74,17 @@ class ChannelDelete(BaseModel):
         json_schema_extra = {
             "example": {
                 "id": "60f7c0c2b4d1c8b4f8e4d2a1",
+            }
+        }
+
+class AddDeleteUserChannel(BaseModel):
+    channel_id: str
+    user_id: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "channel_id": "60f7c0c2b4d1c8b4f8e4d2a1",
+                "user_id": "user123",
             }
         }

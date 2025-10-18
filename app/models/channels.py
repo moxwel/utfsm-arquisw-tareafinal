@@ -1,13 +1,13 @@
-from mongoengine import Document, StringField, FloatField, BooleanField
+from mongoengine import Document, StringField, FloatField, BooleanField, ListField
 from ..schemas.channels import Channel
 from datetime import datetime
 
 
 class ChannelDocument(Document):
     meta = {"collection": "channels", "index_background": True}
-    server_id = StringField(required=True)
+    owner_id = StringField(required=True)
     name = StringField(required=True)
-    users = StringField(required=True)
+    users = ListField(StringField(), default=[])
     channel_type = StringField(required=True, choices=["public", "private"], default="public")
     is_active = BooleanField(required=True, default=True)
     created_at = FloatField(required=True)
@@ -19,9 +19,9 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
         return None
     data = {
         "_id": str(document.pk),
-        "server_id": document.server_id,
+        "owner_id": document.owner_id,
         "name": document.name,
-        "users": document.users.split(",") if document.users else [],
+        "users": document.users,
         "channel_type": document.channel_type,
         "is_active": document.is_active,
         "created_at": datetime.fromtimestamp(document.created_at) if document.created_at else None,
