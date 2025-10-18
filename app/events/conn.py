@@ -7,6 +7,10 @@ import json
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+class PublishError(Exception):
+    """Excepción personalizada para errores de publicación en RabbitMQ."""
+    pass
+
 class RabbitMQClient:
     def __init__(self):
         self.connection: aio_pika.Connection | None = None
@@ -74,7 +78,7 @@ async def close_rabbitmq_connection():
 
 #=========
 
-async def publish_simple_message(message_body: dict, routing_key: str):
+async def publish_message_main(message_body: dict, routing_key: str):
     """Publica un mensaje simple en el exchange principal de RabbitMQ."""
     if not client.channel:
         logger.error("No hay un canal de RabbitMQ disponible para publicar.")
@@ -89,7 +93,7 @@ async def publish_simple_message(message_body: dict, routing_key: str):
         _ = await client.channel.get_exchange(client.main_exchange.name, ensure=True)
     except aio_pika.exceptions.ExchangeNotFoundEntity:
         logger.error(f"El exchange '{client.main_exchange.name}' no existe.")
-        raise
+        raise PublishError(f"El exchange '{client.main_exchange.name}' no existe.")
 
     await client.main_exchange.publish(message_payload, routing_key=routing_key)
     logger.info(f"Mensaje publicado en exchange '{client.main_exchange.name}' con routing key '{routing_key}'")
@@ -110,7 +114,7 @@ async def publish_message(message_body: dict, routing_key: str, exchange_name: s
         target_exchange = await client.channel.get_exchange(exchange_name, ensure=True)
     except aio_pika.exceptions.ChannelClosed:
         logger.error(f"El exchange '{exchange_name}' no existe.")
-        raise
+        raise PublishError(f"El exchange '{exchange_name}' no existe.")
     
     await target_exchange.publish(message_payload, routing_key=routing_key)
     logger.info(f"Mensaje publicado en exchange '{exchange_name}' con routing key '{routing_key}'")

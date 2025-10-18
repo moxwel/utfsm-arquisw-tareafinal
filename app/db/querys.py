@@ -47,19 +47,31 @@ def update_channel(channel_id: str, update_data: ChannelUpdate) -> Channel | Non
     document.save()
     return _document_to_channel(document)
 
-def delete_channel(channel_id: str) -> bool:
+def delete_channel(channel_id: str) -> Channel | None:
     if not channel_id:
-        return False
+        return None
     try:
         document = ChannelDocument.objects.get(id=channel_id)
     except (DoesNotExist, ValidationError):
-        return False
+        return None
     document.is_active = False
     now = datetime.now().timestamp()
-    document.updated_at = now
     document.deleted_at = now
     document.save()
-    return True
+    return _document_to_channel(document)
+
+def db_reactivate_channel(channel_id: str) -> Channel | None:
+    if not channel_id:
+        return None
+    try:
+        document = ChannelDocument.objects.get(id=channel_id)
+    except (DoesNotExist, ValidationError):
+        return None
+    now = datetime.now().timestamp()
+    document.is_active = True
+    document.updated_at = now
+    document.save()
+    return _document_to_channel(document)
 
 def db_add_user_to_channel(channel_id: str, user_id: str) -> Channel | None:
     if not channel_id or not user_id:

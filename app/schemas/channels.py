@@ -14,9 +14,9 @@ class Channel(BaseModel):
     users: list[str]
     is_active: bool = True
     channel_type: ChannelType = ChannelType.PUBLIC
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
-    deleted_at: Optional[datetime] = None
+    created_at: float
+    updated_at: float
+    deleted_at: Optional[float] = None
 
     class Config:
         validate_by_name = True
@@ -52,8 +52,6 @@ class ChannelCreate(BaseModel):
 class ChannelUpdate(BaseModel):
     name: Optional[str] = None
     owner_id: Optional[str] = None
-    users: Optional[list[str]] = None
-    is_active: Optional[bool] = None
     channel_type: Optional[ChannelType] = None
 
     class Config:
@@ -61,13 +59,11 @@ class ChannelUpdate(BaseModel):
             "example": {
                 "name": "random",
                 "owner_id": "owner456",
-                "users": ["user1", "user3"],
-                "is_active": False,
-                "channel_type": "private",
+                "channel_type": "private"
             }
         }
 
-class ChannelDelete(BaseModel):
+class ChannelID(BaseModel):
     id: str
 
     class Config:
