@@ -11,13 +11,11 @@ def create_channel(channel_data: ChannelCreate) -> Channel | None:
     payload = channel_data.model_dump()
     if not payload:
         return None
-
+    if payload["owner_id"] not in payload["users"]:
+        payload["users"].append(payload["owner_id"])
     now = datetime.now().timestamp()
-    if 'users' in payload and isinstance(payload['users'], list):
-        payload['users'] = ",".join(payload['users'])
     document = ChannelDocument(**payload, created_at=now, updated_at=now)
     document.save()
-
     return _document_to_channel(document)
 
 def get_channel_by_id(channel_id: str) -> Channel | None:
@@ -29,16 +27,14 @@ def get_channel_by_id(channel_id: str) -> Channel | None:
         return None
     return _document_to_channel(document)
 
-def get_channels_by_server_id(server_id: str) -> list[Channel]:
-    if not server_id:
+def get_channels_by_owner_id(owner_id: str) -> list[Channel]:
+    if not owner_id:
         return []
-    documents = ChannelDocument.objects(server_id=server_id)
+    documents = ChannelDocument.objects(owner_id=owner_id)
     return [_document_to_channel(doc) for doc in documents]
 
 def update_channel(channel_id: str, update_data: ChannelUpdate) -> Channel | None:
     payload = update_data.model_dump(exclude_unset=True, exclude_none=True)
-    if 'users' in payload and isinstance(payload['users'], list):
-        payload['users'] = ",".join(payload['users'])
     if not channel_id or not payload:
         return None
     try:
@@ -59,6 +55,48 @@ def delete_channel(channel_id: str) -> bool:
     except (DoesNotExist, ValidationError):
         return False
     document.is_active = False
-    document.updated_at = datetime.now().timestamp()
+    now = datetime.now().timestamp()
+    document.updated_at = now
+    document.deleted_at = now
     document.save()
     return True
+
+def db_add_user_to_channel(channel_id: str, user_id: str) -> Channel | None:
+    if not channel_id or not user_id:
+        return None
+    try:
+        document = ChannelDocument.objects.get(id=channel_id)
+    except (DoesNotExist, ValidationError):
+        return None
+    users = document.users if document.users else []
+    if user_id not in users:
+        users.append(user_id)
+        document.users = users
+        document.updated_at = datetime.now().timestamp()
+        document.save()
+    else:
+        return None
+    return _document_to_channel(document)
+
+def db_remove_user_from_channel(channel_id: str, user_id: str) -> Channel | None:
+    if not channel_id or not user_id:
+        return None
+    try:
+        document = ChannelDocument.objects.get(id=channel_id)
+    except (DoesNotExist, ValidationError):
+        return None
+    users = document.users if document.users else []
+    if user_id in users and user_id != document.owner_id:
+        users.remove(user_id)
+        document.users = users
+        document.updated_at = datetime.now().timestamp()
+        document.save()
+    else:
+        return None
+    return _document_to_channel(document)
+
+def get_channels_by_member_id(user_id: str) -> list[Channel]:
+    if not user_id:
+        return []
+    documents = ChannelDocument.objects(users=user_id)
+    return [_document_to_channel(doc) for doc in documents]

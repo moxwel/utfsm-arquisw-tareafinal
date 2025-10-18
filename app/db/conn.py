@@ -24,7 +24,7 @@ def connect_to_mongo():
     mongo_url = os.getenv("MONGO_URL", "mongodb://mongo:27017")
     logger.info(f"Conectando a MongoDB en: {mongo_url} ...")
     
-    mongo_db_name = os.getenv("MONGO_DB_NAME", "fastapi_db")
+    mongo_db_name = os.getenv("MONGO_DB_NAME", "channel_db")
     connect(db=mongo_db_name, host=mongo_url, alias=db_manager.alias)
     db_manager.client = connection.get_connection(alias=db_manager.alias)
     db_manager.database = connection.get_db(alias=db_manager.alias)
