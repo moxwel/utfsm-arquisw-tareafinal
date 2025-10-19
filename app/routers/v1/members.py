@@ -88,7 +88,7 @@ async def read_channels_by_owner(owner_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
 
-@router.get("/members/{channel_id}", response_model=ChannelMemberIDs)
+@router.get("/channel/{channel_id}", response_model=ChannelMemberIDs)
 async def read_channel_member_ids(channel_id: str):
     """Obtiene los IDs de los miembros de un canal específico desde MongoDB."""
     try:

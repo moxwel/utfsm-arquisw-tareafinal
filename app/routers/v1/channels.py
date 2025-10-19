@@ -110,7 +110,7 @@ async def remove_channel(channel_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al desactivar el canal: {str(e)}")
 
-@router.post("/reactivate/{channel_id}", response_model=ChannelID)
+@router.post("/{channel_id}/reactivate", response_model=ChannelID)
 async def reactivate_channel(channel_id: str):
     """Reactiva un canal desactivado en MongoDB."""
     try:
@@ -138,7 +138,7 @@ async def reactivate_channel(channel_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al reactivar el canal: {str(e)}")
 
-@router.get("/basic/{channel_id}", response_model=ChannelBasicInfo)
+@router.get("/{channel_id}/basic", response_model=ChannelBasicInfo)
 async def read_channel_basic_info(channel_id: str):
     """Obtiene información básica de un canal específico desde MongoDB."""
     try:
