@@ -57,20 +57,6 @@ async def read_channel(channel_id: str):
         logger.exception("Error interno al obtener canal")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error interno del servidor") from exc
 
-@router.get("/owner/{owner_id}", response_model=list[Channel])
-async def read_channels_by_owner(owner_id: str):
-    """Obtiene todos los canales asociados a un propietario específico desde MongoDB."""
-    try:
-        channels = get_channels_by_owner_id(owner_id)
-        return channels
-    except (InvalidId, ValidationError):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de servidor inválido.")
-    except HTTPException as exc:
-        raise exc
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
-
-
 @router.put("/id/{channel_id}", response_model=Channel)
 async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
     """Actualiza un canal existente en MongoDB."""
@@ -150,46 +136,3 @@ async def reactivate_channel(channel_id: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al reactivar el canal: {str(e)}")
-
-@router.post("/add_user", response_model=Channel)
-async def add_user_to_channel(channel_id: str, user_id: str):
-    """Agrega un usuario a un canal existente en MongoDB."""
-    try:
-        channel = db_add_user_to_channel(channel_id, user_id)
-        if channel is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario ya en el canal.")
-        return channel
-    except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
-    except HTTPException as exc:
-        raise exc
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al agregar usuario al canal: {str(e)}")
-    
-@router.post("/remove_user", response_model=Channel)
-async def remove_user_from_channel(channel_id: str, user_id: str):
-    """Elimina un usuario de un canal existente en MongoDB."""
-    try:
-        channel = db_remove_user_from_channel(channel_id, user_id)
-        if channel is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario no está en el canal.")
-        return channel
-    except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
-    except HTTPException as exc:
-        raise exc
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al eliminar usuario del canal: {str(e)}")
-
-@router.get("/member/user/{user_id}", response_model=list[Channel])
-async def read_channels_by_member(user_id: str):
-    """Obtiene todos los canales en los que un usuario es miembro desde MongoDB."""
-    try:
-        channels = get_channels_by_member_id(user_id)
-        return channels
-    except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de usuario inválido: {str(e)}")
-    except HTTPException as exc:
-        raise exc
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
