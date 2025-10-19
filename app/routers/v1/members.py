@@ -16,13 +16,25 @@ from ...db.querys import (
 from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo, ChannelMemberIDs
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
+from ...schemas.http_responses import ErrorResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/v1/members", tags=["members"])
+ROUTER_ERROR_RESPONSES = {
+    422: {"model": ErrorResponse, "description": "Entidad no procesable – datos o ID inválidos."},
+    500: {"model": ErrorResponse, "description": "Error interno del servidor."},
+}
 
-@router.post("/", response_model=Channel)
+router = APIRouter(prefix="/v1/members", tags=["members"], responses=ROUTER_ERROR_RESPONSES)
+
+@router.post(
+    "/",
+    response_model=Channel,
+    responses={
+        404: {"model": ErrorResponse, "description": "Recurso no encontrado."}
+    }
+)
 async def add_user_to_channel(channel_id: str, user_id: str):
     """Agrega un usuario a un canal existente en MongoDB."""
     try:
@@ -42,7 +54,13 @@ async def add_user_to_channel(channel_id: str, user_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al agregar usuario al canal: {str(e)}")
     
-@router.delete("/", response_model=Channel)
+@router.delete(
+    "/",
+    response_model=Channel,
+    responses={
+        404: {"model": ErrorResponse, "description": "Recurso no encontrado."}
+    }
+)
 async def remove_user_from_channel(channel_id: str, user_id: str):
     """Elimina un usuario de un canal existente en MongoDB."""
     try:
@@ -88,7 +106,13 @@ async def read_channels_by_owner(owner_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
 
-@router.get("/channel/{channel_id}", response_model=ChannelMemberIDs)
+@router.get(
+    "/channel/{channel_id}",
+    response_model=ChannelMemberIDs,
+    responses={
+        404: {"model": ErrorResponse, "description": "Recurso no encontrado."}
+    }
+)
 async def read_channel_member_ids(channel_id: str):
     """Obtiene los IDs de los miembros de un canal específico desde MongoDB."""
     try:

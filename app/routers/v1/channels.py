@@ -16,11 +16,18 @@ from ...db.querys import (
 from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
+from ...schemas.http_responses import ErrorResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/v1/channels", tags=["channels"])
+ROUTER_ERROR_RESPONSES = {
+    404: {"model": ErrorResponse, "description": "Recurso no encontrado."},
+    422: {"model": ErrorResponse, "description": "Entidad no procesable – datos o ID inválidos."},
+    500: {"model": ErrorResponse, "description": "Error interno del servidor."},
+}
+
+router = APIRouter(prefix="/v1/channels", tags=["channels"], responses=ROUTER_ERROR_RESPONSES)
 
 @router.post("/", response_model=Channel, status_code=201)
 async def add_channel(channel_data: ChannelCreate):
@@ -82,7 +89,13 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al actualizar el canal: {str(e)}")
 
 
-@router.delete("/{channel_id}", response_model=ChannelID)
+@router.delete(
+    "/{channel_id}",
+    response_model=ChannelID,
+    responses={
+        409: {"model": ErrorResponse, "description": "Conflict: el canal ya estaba desactivado al momento de la solicitud."}
+    }
+)
 async def remove_channel(channel_id: str):
     """Desactiva un canal en MongoDB (no lo elimina físicamente)."""
     try:
@@ -110,7 +123,13 @@ async def remove_channel(channel_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al desactivar el canal: {str(e)}")
 
-@router.post("/{channel_id}/reactivate", response_model=ChannelID)
+@router.post(
+    "/{channel_id}/reactivate",
+    response_model=ChannelID,
+    responses={
+        409: {"model": ErrorResponse, "description": "Conflict: el canal ya se encuentra activo; no requiere reactivación."}
+    }
+)
 async def reactivate_channel(channel_id: str):
     """Reactiva un canal desactivado en MongoDB."""
     try:
