@@ -13,10 +13,11 @@ from ...db.querys import (
     db_reactivate_channel,
     db_get_channel_member_ids,
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo, ChannelMemberIDs
+from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo, ChannelMember
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
 from ...schemas.http_responses import ErrorResponse
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,7 +42,8 @@ async def add_user_to_channel(channel_id: str, user_id: str):
         channel = db_add_user_to_channel(channel_id, user_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario ya en el canal.")
-        payload = {"channel_id": channel.id, "user_id": user_id, "added_at": channel.updated_at}
+        added_user = next((u for u in channel.users if u.id == user_id), None)
+        payload = {"channel_id": channel.id, "user_id": user_id, "added_at": added_user.joined_at if added_user else None}
         await publish_message_main(payload, "channel.user_added")
         return channel
     except (InvalidId, ValidationError) as e:
@@ -66,8 +68,8 @@ async def remove_user_from_channel(channel_id: str, user_id: str):
     try:
         channel = db_remove_user_from_channel(channel_id, user_id)
         if channel is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario no está en el canal.")
-        payload = {"channel_id": channel.id, "user_id": user_id, "removed_at": channel.updated_at}
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado, el usuario no está en el canal o es el propietario.")
+        payload = {"channel_id": channel.id, "user_id": user_id, "removed_at": datetime.now().timestamp()}
         await publish_message_main(payload, "channel.user_removed")
         return channel
     except (InvalidId, ValidationError) as e:
@@ -108,7 +110,7 @@ async def read_channels_by_owner(owner_id: str):
 
 @router.get(
     "/channel/{channel_id}",
-    response_model=ChannelMemberIDs,
+    response_model=list[ChannelMember],
     responses={
         404: {"model": ErrorResponse, "description": "Recurso no encontrado."}
     }
