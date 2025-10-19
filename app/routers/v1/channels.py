@@ -10,9 +10,10 @@ from ...db.querys import (
     db_add_user_to_channel,
     db_remove_user_from_channel,
     db_get_channels_by_member_id,
-    db_reactivate_channel
+    db_reactivate_channel,
+    db_get_basic_channel_info
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction
+from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
 
@@ -42,7 +43,7 @@ async def add_channel(channel_data: ChannelCreate):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al crear el canal: {str(e)}")
 
 
-@router.get("/id/{channel_id}", response_model=Channel)
+@router.get("/{channel_id}", response_model=Channel)
 async def read_channel(channel_id: str):
     try:
         channel = db_get_channel_by_id(channel_id)
@@ -57,7 +58,7 @@ async def read_channel(channel_id: str):
         logger.exception("Error interno al obtener canal")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error interno del servidor") from exc
 
-@router.put("/id/{channel_id}", response_model=Channel)
+@router.put("/{channel_id}", response_model=Channel)
 async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
     """Actualiza un canal existente en MongoDB."""
     try:
@@ -81,7 +82,7 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al actualizar el canal: {str(e)}")
 
 
-@router.delete("/id/{channel_id}", response_model=ChannelID)
+@router.delete("/{channel_id}", response_model=ChannelID)
 async def remove_channel(channel_id: str):
     """Desactiva un canal en MongoDB (no lo elimina físicamente)."""
     try:
@@ -136,3 +137,18 @@ async def reactivate_channel(channel_id: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al reactivar el canal: {str(e)}")
+
+@router.get("/basic/{channel_id}", response_model=ChannelBasicInfo)
+async def read_channel_basic_info(channel_id: str):
+    """Obtiene información básica de un canal específico desde MongoDB."""
+    try:
+        channel = db_get_basic_channel_info(channel_id)
+        if channel is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
+        return channel
+    except (InvalidId, ValidationError) as e:   
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")

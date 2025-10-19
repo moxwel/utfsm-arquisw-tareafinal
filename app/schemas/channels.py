@@ -108,3 +108,13 @@ class ChannelUserAction(BaseModel):
                 "user_id": "user123",
             }
         }
+
+class ChannelMemberIDs(BaseModel):
+    user_ids: list[str]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_ids": ["user1", "user2", "user3"],
+            }
+        }

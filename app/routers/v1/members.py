@@ -10,9 +10,10 @@ from ...db.querys import (
     db_add_user_to_channel,
     db_remove_user_from_channel,
     db_get_channels_by_member_id,
-    db_reactivate_channel
+    db_reactivate_channel,
+    db_get_channel_member_ids,
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo
+from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo, ChannelMemberIDs
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
 
@@ -28,11 +29,16 @@ async def add_user_to_channel(channel_id: str, user_id: str):
         channel = db_add_user_to_channel(channel_id, user_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario ya en el canal.")
+        payload = {"channel_id": channel.id, "user_id": user_id, "added_at": channel.updated_at}
+        await publish_message_main(payload, "channel.user_added")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
+    except PublishError as e:
+        logger.error(f"Error de publicación en RabbitMQ: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al agregar usuario al canal: {str(e)}")
     
@@ -43,11 +49,16 @@ async def remove_user_from_channel(channel_id: str, user_id: str):
         channel = db_remove_user_from_channel(channel_id, user_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario no está en el canal.")
+        payload = {"channel_id": channel.id, "user_id": user_id, "removed_at": channel.updated_at}
+        await publish_message_main(payload, "channel.user_removed")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
+    except PublishError as e:
+        logger.error(f"Error de publicación en RabbitMQ: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error de publicación en RabbitMQ.")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al eliminar usuario del canal: {str(e)}")
 
@@ -72,6 +83,21 @@ async def read_channels_by_owner(owner_id: str):
         return channels
     except (InvalidId, ValidationError):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de servidor inválido.")
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
+
+@router.get("/members/{channel_id}", response_model=ChannelMemberIDs)
+async def read_channel_member_ids(channel_id: str):
+    """Obtiene los IDs de los miembros de un canal específico desde MongoDB."""
+    try:
+        member_ids = db_get_channel_member_ids(channel_id)
+        if member_ids is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
+        return member_ids
+    except (InvalidId, ValidationError) as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except Exception as e:
