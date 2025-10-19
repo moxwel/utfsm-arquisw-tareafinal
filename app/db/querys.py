@@ -1,7 +1,7 @@
 from mongoengine.errors import DoesNotExist, ValidationError
-from ..models.channels import ChannelDocument, _document_to_channel, _document_to_channel_basic_info
+from ..models.channels import ChannelDocument, _document_to_channel, _document_to_channel_basic_info, ChannelMemberDocument
 from datetime import datetime
-from ..schemas.channels import Channel, ChannelCreate, ChannelUpdate, ChannelBasicInfo, ChannelMemberIDs
+from ..schemas.channels import Channel, ChannelCreate, ChannelUpdate, ChannelBasicInfo, ChannelMember
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -11,10 +11,16 @@ def db_create_channel(channel_data: ChannelCreate) -> Channel | None:
     payload = channel_data.model_dump()
     if not payload:
         return None
-    if payload["owner_id"] not in payload["users"]:
-        payload["users"].append(payload["owner_id"])
+    
     now = datetime.now().timestamp()
-    document = ChannelDocument(**payload, created_at=now, updated_at=now)
+    
+    user_ids = payload.pop("users", [])
+    if payload["owner_id"] not in user_ids:
+        user_ids.append(payload["owner_id"])
+    
+    users_with_timestamp = [ChannelMemberDocument(id=uid, joined_at=now) for uid in user_ids]
+
+    document = ChannelDocument(**payload, users=users_with_timestamp, created_at=now, updated_at=now)
     document.save()
     return _document_to_channel(document)
 
@@ -80,11 +86,11 @@ def db_add_user_to_channel(channel_id: str, user_id: str) -> Channel | None:
         document = ChannelDocument.objects.get(id=channel_id)
     except (DoesNotExist, ValidationError):
         return None
-    users = document.users if document.users else []
-    if user_id not in users:
-        users.append(user_id)
-        document.users = users
-        document.updated_at = datetime.now().timestamp()
+    
+    user_ids = [u.id for u in document.users]
+    if user_id not in user_ids:
+        new_member = ChannelMemberDocument(id=user_id, joined_at=datetime.now().timestamp())
+        document.users.append(new_member)
         document.save()
     else:
         return None
@@ -97,11 +103,14 @@ def db_remove_user_from_channel(channel_id: str, user_id: str) -> Channel | None
         document = ChannelDocument.objects.get(id=channel_id)
     except (DoesNotExist, ValidationError):
         return None
-    users = document.users if document.users else []
-    if user_id in users and user_id != document.owner_id:
-        users.remove(user_id)
-        document.users = users
-        document.updated_at = datetime.now().timestamp()
+    
+    if user_id == document.owner_id:
+        return None # No se puede eliminar al propietario
+
+    user_to_remove = next((u for u in document.users if u.id == user_id), None)
+    
+    if user_to_remove:
+        document.users.remove(user_to_remove)
         document.save()
     else:
         return None
@@ -110,7 +119,7 @@ def db_remove_user_from_channel(channel_id: str, user_id: str) -> Channel | None
 def db_get_channels_by_member_id(user_id: str) -> list[ChannelBasicInfo]:
     if not user_id:
         return []
-    documents = ChannelDocument.objects(users=user_id, is_active=True)
+    documents = ChannelDocument.objects(users__id=user_id, is_active=True)
     return [_document_to_channel_basic_info(doc) for doc in documents]
 
 def db_get_basic_channel_info(channel_id: str) -> ChannelBasicInfo | None:
@@ -122,12 +131,12 @@ def db_get_basic_channel_info(channel_id: str) -> ChannelBasicInfo | None:
         return None
     return _document_to_channel_basic_info(document)
 
-def db_get_channel_member_ids(channel_id: str) -> ChannelMemberIDs | None:
+def db_get_channel_member_ids(channel_id: str) -> list[ChannelMember] | None:
     if not channel_id:
         return None
     try:
         document = ChannelDocument.objects.get(id=channel_id)
     except (DoesNotExist, ValidationError):
         return None
-    user_ids = document.users if document.users else []
-    return ChannelMemberIDs(user_ids=user_ids)
+    
+    return [ChannelMember(id=u.id, joined_at=u.joined_at) for u in document.users]

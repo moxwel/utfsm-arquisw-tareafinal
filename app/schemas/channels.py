@@ -7,11 +7,15 @@ class ChannelType(str, Enum):
     PUBLIC = "public"
     PRIVATE = "private"
 
+class ChannelMember(BaseModel):
+    id: str
+    joined_at: float
+
 class Channel(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
     name: str
     owner_id: str
-    users: list[str]
+    users: list[ChannelMember]
     is_active: bool = True
     channel_type: ChannelType = ChannelType.PUBLIC
     created_at: float
@@ -29,9 +33,9 @@ class Channel(BaseModel):
             "name": "general",
             "owner_id": "owner123",
             "users": [
-                "user1",
-                "user2",
-                "owner123"
+                {"id": "user1", "joined_at": 1760833769.259725},
+                {"id": "user2", "joined_at": 1760833769.259725},
+                {"id": "owner123", "joined_at": 1760833769.259725}
             ],
             "is_active": True,
             "channel_type": "public",
@@ -86,6 +90,7 @@ class ChannelBasicInfo(BaseModel):
     name: str
     owner_id: str
     channel_type: ChannelType
+    created_at: float
 
     class Config:
         json_schema_extra = {
@@ -93,7 +98,8 @@ class ChannelBasicInfo(BaseModel):
                 "id": "60f7c0c2b4d1c8b4f8e4d2a1",
                 "name": "general",
                 "owner_id": "owner123",
-                "channel_type": "public"
+                "channel_type": "public",
+                "created_at": 1760833769.259725
             }
         }
 
@@ -106,15 +112,5 @@ class ChannelUserAction(BaseModel):
             "example": {
                 "channel_id": "60f7c0c2b4d1c8b4f8e4d2a1",
                 "user_id": "user123",
-            }
-        }
-
-class ChannelMemberIDs(BaseModel):
-    user_ids: list[str]
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "user_ids": ["user1", "user2", "user3"],
             }
         }
