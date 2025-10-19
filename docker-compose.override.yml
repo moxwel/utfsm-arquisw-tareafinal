@@ -1,0 +1,15 @@
+version: '3.8'
+
+# OVERRIDE PARA ENTORNO DE DESARROLLO
+# Ejecutar docker compose normalmente.
+# La carpeta ./app se monta en el contenedor para reflejar cambios en
+# tiempo real sin necesidad de reconstruir la imagen.
+
+# PARA EJECUTAR EN ENTORNO DE PRODUCCION:
+# $ docker compose -f docker-compose.yml up --build
+
+services:
+  api:
+    volumes:
+      - ./app:/code/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -21,7 +21,7 @@ def connect_to_mongo():
     """
     Establece la conexión con la base de datos MongoDB.
     """
-    mongo_url = os.getenv("MONGO_URL", "mongodb://mongo:27017")
+    mongo_url = os.getenv("MONGO_URL", "mongodb://localhost:27017")
     logger.info(f"Conectando a MongoDB en: {mongo_url} ...")
     
     mongo_db_name = os.getenv("MONGO_DB_NAME", "channel_db")
