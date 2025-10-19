@@ -57,10 +57,10 @@ async def _setup_rabbitmq(channel: aio_pika.abc.AbstractChannel):
     logger.info("Configuración de RabbitMQ completada.")
 
 async def connect_to_rabbitmq():
-    """Establece la conexión con RabbitMQ. Si falla, reintenta hasta 5 veces."""
-    rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
-    max_retries = 5
-    timeout_seconds = 5
+    """Establece la conexión con RabbitMQ. Si falla, reintenta hasta N veces."""
+    rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq/")
+    max_retries = int(os.getenv("RABBITMQ_MAX_RETRIES", "20"))
+    timeout_seconds = float(os.getenv("RABBITMQ_RETRY_DELAY", "3"))
     
     for attempt in range(max_retries):
         try:
