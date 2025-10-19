@@ -1,7 +1,7 @@
 from mongoengine.errors import DoesNotExist, ValidationError
 from ..models.channels import ChannelDocument, _document_to_channel, _document_to_channel_basic_info
 from datetime import datetime
-from ..schemas.channels import Channel, ChannelCreate, ChannelUpdate, ChannelBasicInfo
+from ..schemas.channels import Channel, ChannelCreate, ChannelUpdate, ChannelBasicInfo, ChannelMemberIDs
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -112,3 +112,22 @@ def db_get_channels_by_member_id(user_id: str) -> list[ChannelBasicInfo]:
         return []
     documents = ChannelDocument.objects(users=user_id, is_active=True)
     return [_document_to_channel_basic_info(doc) for doc in documents]
+
+def db_get_basic_channel_info(channel_id: str) -> ChannelBasicInfo | None:
+    if not channel_id:
+        return None
+    try:
+        document = ChannelDocument.objects.get(id=channel_id)
+    except (DoesNotExist, ValidationError):
+        return None
+    return _document_to_channel_basic_info(document)
+
+def db_get_channel_member_ids(channel_id: str) -> ChannelMemberIDs | None:
+    if not channel_id:
+        return None
+    try:
+        document = ChannelDocument.objects.get(id=channel_id)
+    except (DoesNotExist, ValidationError):
+        return None
+    user_ids = document.users if document.users else []
+    return ChannelMemberIDs(user_ids=user_ids)
