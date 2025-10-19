@@ -1,7 +1,7 @@
 from mongoengine.errors import DoesNotExist, ValidationError
-from ..models.channels import ChannelDocument, _document_to_channel
+from ..models.channels import ChannelDocument, _document_to_channel, _document_to_channel_basic_info
 from datetime import datetime
-from ..schemas.channels import Channel, ChannelCreate, ChannelUpdate
+from ..schemas.channels import Channel, ChannelCreate, ChannelUpdate, ChannelBasicInfo
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -27,11 +27,11 @@ def get_channel_by_id(channel_id: str) -> Channel | None:
         return None
     return _document_to_channel(document)
 
-def get_channels_by_owner_id(owner_id: str) -> list[Channel]:
+def get_channels_by_owner_id(owner_id: str) -> list[ChannelBasicInfo]:
     if not owner_id:
         return []
     documents = ChannelDocument.objects(owner_id=owner_id)
-    return [_document_to_channel(doc) for doc in documents]
+    return [_document_to_channel_basic_info(doc) for doc in documents]
 
 def update_channel(channel_id: str, update_data: ChannelUpdate) -> Channel | None:
     payload = update_data.model_dump(exclude_unset=True, exclude_none=True)
@@ -107,8 +107,8 @@ def db_remove_user_from_channel(channel_id: str, user_id: str) -> Channel | None
         return None
     return _document_to_channel(document)
 
-def get_channels_by_member_id(user_id: str) -> list[Channel]:
+def get_channels_by_member_id(user_id: str) -> list[ChannelBasicInfo]:
     if not user_id:
         return []
-    documents = ChannelDocument.objects(users=user_id)
-    return [_document_to_channel(doc) for doc in documents]
+    documents = ChannelDocument.objects(users=user_id, is_active=True)
+    return [_document_to_channel_basic_info(doc) for doc in documents]

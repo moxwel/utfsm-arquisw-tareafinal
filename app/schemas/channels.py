@@ -73,6 +73,22 @@ class ChannelID(BaseModel):
             }
         }
 
+class ChannelBasicInfo(BaseModel):
+    id: str
+    name: str
+    owner_id: str
+    channel_type: ChannelType
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "60f7c0c2b4d1c8b4f8e4d2a1",
+                "name": "general",
+                "owner_id": "owner123",
+                "channel_type": "public"
+            }
+        }
+
 class AddDeleteUserChannel(BaseModel):
     channel_id: str
     user_id: str

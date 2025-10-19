@@ -1,5 +1,5 @@
 from mongoengine import Document, StringField, FloatField, BooleanField, ListField
-from ..schemas.channels import Channel
+from ..schemas.channels import Channel, ChannelBasicInfo
 from datetime import datetime
 
 
@@ -29,3 +29,14 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
         "deleted_at": document.deleted_at,
     }
     return Channel.model_validate(data)
+
+def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicInfo | None:
+    if not document:
+        return None
+    data = {
+        "id": str(document.pk),
+        "name": document.name,
+        "owner_id": document.owner_id,
+        "channel_type": document.channel_type,
+    }
+    return ChannelBasicInfo.model_validate(data)
