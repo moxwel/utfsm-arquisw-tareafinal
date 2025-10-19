@@ -8,8 +8,11 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - mongo
-      - rabbitmq
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
 
   mongo:
     image: mongo:latest
@@ -17,6 +20,7 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -25,6 +29,13 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
 
 volumes:
   mongo-data:
