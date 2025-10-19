@@ -16,23 +16,18 @@ from ...db.querys import (
 from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
-from pydantic import BaseModel  # <-- añadido
+from ...schemas.http_responses import ErrorResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Esquema y respuestas comunes inline (sin crear archivo nuevo)
-class ErrorResponse(BaseModel):
-    detail: str
-    suggestion: str | None = None
-
-COMMON_ERROR_RESPONSES = {
+ROUTER_ERROR_RESPONSES = {
     404: {"model": ErrorResponse, "description": "Recurso no encontrado."},
     422: {"model": ErrorResponse, "description": "Entidad no procesable – datos o ID inválidos."},
-    500: {"model": ErrorResponse, "description": "Error interno del servidor."},  # <-- añadido
+    500: {"model": ErrorResponse, "description": "Error interno del servidor."},
 }
 
-router = APIRouter(prefix="/v1/channels", tags=["channels"], responses=COMMON_ERROR_RESPONSES)  # <-- pequeño ajuste
+router = APIRouter(prefix="/v1/channels", tags=["channels"], responses=ROUTER_ERROR_RESPONSES)
 
 @router.post("/", response_model=Channel, status_code=201)
 async def add_channel(channel_data: ChannelCreate):
@@ -98,18 +93,7 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
     "/{channel_id}",
     response_model=ChannelID,
     responses={
-        409: {
-            "model": ErrorResponse,
-            "description": "Conflict: el canal ya estaba desactivado al momento de la solicitud.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "El canal ya está desactivado.",
-                        "suggestion": "No es necesaria ninguna acción. Para habilitarlo usa POST /v1/channels/reactivate/{channel_id}."
-                    }
-                }
-            }
-        }
+        409: {"model": ErrorResponse, "description": "Conflict: el canal ya estaba desactivado al momento de la solicitud."}
     }
 )
 async def remove_channel(channel_id: str):
@@ -142,19 +126,8 @@ async def remove_channel(channel_id: str):
 @router.post(
     "/reactivate/{channel_id}",
     response_model=ChannelID,
-    responses={  # <-- documenta 409 específico
-        409: {
-            "model": ErrorResponse,
-            "description": "Conflict: el canal ya se encuentra activo; no requiere reactivación.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "El canal ya está activo.",
-                        "suggestion": "No es necesaria ninguna acción. Si necesitas cambiar datos del canal usa PUT /v1/channels/{channel_id}."
-                    }
-                }
-            }
-        }
+    responses={
+        409: {"model": ErrorResponse, "description": "Conflict: el canal ya se encuentra activo; no requiere reactivación."}
     }
 )
 async def reactivate_channel(channel_id: str):
