@@ -25,11 +25,19 @@ class Channel(BaseModel):
         }
         json_schema_extra = {
             "example": {
-                "name": "general",
-                "owner_id": "owner123",
-                "users": ["user1", "user2"],
-                "is_active": True,
-                "channel_type": "public",
+            "_id": "68f430e95055d3561d1d3167",
+            "name": "general",
+            "owner_id": "owner123",
+            "users": [
+                "user1",
+                "user2",
+                "owner123"
+            ],
+            "is_active": True,
+            "channel_type": "public",
+            "created_at": 1760833769.259725,
+            "updated_at": 1760833769.259725,
+            "deleted_at": None
             }
         }
 
@@ -89,7 +97,7 @@ class ChannelBasicInfo(BaseModel):
             }
         }
 
-class AddDeleteUserChannel(BaseModel):
+class ChannelUserAction(BaseModel):
     channel_id: str
     user_id: str
 

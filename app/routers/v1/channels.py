@@ -2,17 +2,17 @@ from fastapi import APIRouter, HTTPException, status
 from bson.errors import InvalidId
 from mongoengine.errors import ValidationError
 from ...db.querys import (
-    create_channel,
-    get_channel_by_id,
-    get_channels_by_owner_id,
-    update_channel,
-    delete_channel,
+    db_create_channel,
+    db_get_channel_by_id,
+    db_get_channels_by_owner_id,
+    db_update_channel,
+    db_deactivate_channel,
     db_add_user_to_channel,
     db_remove_user_from_channel,
-    get_channels_by_member_id,
+    db_get_channels_by_member_id,
     db_reactivate_channel
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, AddDeleteUserChannel
+from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
 
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/v1/channels", tags=["channels"])
 async def add_channel(channel_data: ChannelCreate):
     """Crea un nuevo canal y lo guarda en MongoDB."""
     try:
-        channel = create_channel(channel_data)
+        channel = db_create_channel(channel_data)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear el canal.")
 
@@ -45,7 +45,7 @@ async def add_channel(channel_data: ChannelCreate):
 @router.get("/id/{channel_id}", response_model=Channel)
 async def read_channel(channel_id: str):
     try:
-        channel = get_channel_by_id(channel_id)
+        channel = db_get_channel_by_id(channel_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return channel
@@ -61,7 +61,7 @@ async def read_channel(channel_id: str):
 async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
     """Actualiza un canal existente en MongoDB."""
     try:
-        channel = update_channel(channel_id, channel_update)
+        channel = db_update_channel(channel_id, channel_update)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o sin datos para actualizar.")
 
@@ -85,7 +85,7 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
 async def remove_channel(channel_id: str):
     """Desactiva un canal en MongoDB (no lo elimina físicamente)."""
     try:
-        channel = get_channel_by_id(channel_id)
+        channel = db_get_channel_by_id(channel_id)
         
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
@@ -93,7 +93,7 @@ async def remove_channel(channel_id: str):
         if not channel.is_active:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El canal ya está desactivado.")
         
-        channel = delete_channel(channel_id)
+        channel = db_deactivate_channel(channel_id)
         
         payload = {"channel_id": channel_id, "deleted_at": channel.deleted_at}
         await publish_message_main(payload, "channel.deleted")
@@ -113,7 +113,7 @@ async def remove_channel(channel_id: str):
 async def reactivate_channel(channel_id: str):
     """Reactiva un canal desactivado en MongoDB."""
     try:
-        channel = get_channel_by_id(channel_id)
+        channel = db_get_channel_by_id(channel_id)
         
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")

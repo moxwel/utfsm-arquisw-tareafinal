@@ -2,17 +2,17 @@ from fastapi import APIRouter, HTTPException, status
 from bson.errors import InvalidId
 from mongoengine.errors import ValidationError
 from ...db.querys import (
-    create_channel,
-    get_channel_by_id,
-    get_channels_by_owner_id,
-    update_channel,
-    delete_channel,
+    db_create_channel,
+    db_get_channel_by_id,
+    db_get_channels_by_owner_id,
+    db_update_channel,
+    db_deactivate_channel,
     db_add_user_to_channel,
     db_remove_user_from_channel,
-    get_channels_by_member_id,
+    db_get_channels_by_member_id,
     db_reactivate_channel
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, AddDeleteUserChannel, ChannelBasicInfo
+from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
 
@@ -55,7 +55,7 @@ async def remove_user_from_channel(channel_id: str, user_id: str):
 async def read_channels_by_member(user_id: str):
     """Obtiene todos los canales en los que un usuario es miembro desde MongoDB."""
     try:
-        channels = get_channels_by_member_id(user_id)
+        channels = db_get_channels_by_member_id(user_id)
         return channels
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de usuario inválido: {str(e)}")
@@ -68,7 +68,7 @@ async def read_channels_by_member(user_id: str):
 async def read_channels_by_owner(owner_id: str):
     """Obtiene todos los canales asociados a un propietario específico desde MongoDB."""
     try:
-        channels = get_channels_by_owner_id(owner_id)
+        channels = db_get_channels_by_owner_id(owner_id)
         return channels
     except (InvalidId, ValidationError):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de servidor inválido.")
