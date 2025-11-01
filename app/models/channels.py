@@ -12,6 +12,7 @@ class ChannelDocument(Document):
     owner_id = StringField(required=True)
     name = StringField(required=True)
     users = ListField(EmbeddedDocumentField(ChannelMemberDocument), default=[])
+    threads = ListField(StringField(), default=[])
     channel_type = StringField(required=True, choices=["public", "private"], default="public")
     is_active = BooleanField(required=True, default=True)
     created_at = FloatField(required=True)
@@ -26,6 +27,7 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
         "owner_id": document.owner_id,
         "name": document.name,
         "users": [{"id": u.id, "joined_at": u.joined_at} for u in document.users],
+        "threads": document.threads,
         "channel_type": document.channel_type,
         "is_active": document.is_active,
         "created_at": document.created_at,

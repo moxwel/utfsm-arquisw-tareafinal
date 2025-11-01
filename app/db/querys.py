@@ -140,3 +140,35 @@ def db_get_channel_member_ids(channel_id: str) -> list[ChannelMember] | None:
         return None
     
     return [ChannelMember(id=u.id, joined_at=u.joined_at) for u in document.users]
+
+def db_add_thread_to_channel(channel_id: str, thread_id: str) -> Channel | None:
+    if not channel_id or not thread_id:
+        return None
+    try:
+        document = ChannelDocument.objects.get(id=channel_id)
+    except (DoesNotExist, ValidationError):
+        return None
+    
+    if thread_id not in document.threads:
+        document.threads.append(thread_id)
+        document.updated_at = datetime.now().timestamp()
+        document.save()
+    else:
+        return None
+    return _document_to_channel(document)
+
+def db_remove_thread_from_channel(channel_id: str, thread_id: str) -> Channel | None:
+    if not channel_id or not thread_id:
+        return None
+    try:
+        document = ChannelDocument.objects.get(id=channel_id)
+    except (DoesNotExist, ValidationError):
+        return None
+    
+    if thread_id in document.threads:
+        document.threads.remove(thread_id)
+        document.updated_at = datetime.now().timestamp()
+        document.save()
+    else:
+        return None
+    return _document_to_channel(document)
