@@ -1,5 +1,3 @@
-version: '3.8'
-
 # OVERRIDE PARA ENTORNO DE DESARROLLO
 # Ejecutar docker compose normalmente.
 # La carpeta ./app se monta en el contenedor para reflejar cambios en

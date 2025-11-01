@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: mongo
-          image: mongo:latest
+          image: mongo:8.2
           ports:
             - containerPort: 27017
           volumeMounts:
@@ -86,7 +86,7 @@ spec:
     spec:
       containers:
         - name: rabbitmq
-          image: rabbitmq:3-management
+          image: rabbitmq:3.13-management
           ports:
             - containerPort: 5672
             - containerPort: 15672
@@ -138,7 +138,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/moxwel/utfsm-arquisw-tareafinal:main
+          image: ghcr.io/moxwel/utfsm-arquisw-tareafinal:latest
           ports:
             - containerPort: 8000
           envFrom:
