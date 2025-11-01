@@ -29,7 +29,7 @@ async def add_thread_to_channel(payload: ChannelThreadPayload):
     try:
         channel = db_add_thread_to_channel(payload.channel_id, payload.thread_id)
         if channel is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o el hilo ya existe en el canal.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o el hilo ya existe en un canal.")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
