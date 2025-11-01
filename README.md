@@ -47,10 +47,10 @@ RABBITMQ_RETRY_DELAY=3
 ### Paso 1: Construir y levantar los servicios con Docker
 
 ```bash
-docker compose -f docker-compose.yml up --build
+docker compose -f docker-compose.image.yml up --build
 ```
 
-> [!WARNING] Utilizar `docker compose up --build` (sin `-f`) esta pensado para entorno de desarrollo. Asegurese de usar el archivo correcto en producción.
+> [!WARNING] Utilizar `docker compose up --build` (sin `-f`) esta pensado para entorno de desarrollo ya que se aplica el archivo `docker-compose.override.yml`. Asegurese de usar el archivo correcto en producción.
 
 Esto levanta:
 - `api` en el puerto 8000

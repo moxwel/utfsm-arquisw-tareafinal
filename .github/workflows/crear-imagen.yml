@@ -2,9 +2,9 @@ name: Crear Imagen Docker
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "docker-image" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "docker-image" ]
 
 env:
   REGISTRY: ghcr.io
@@ -28,6 +28,8 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=raw, value=latest
 
     # https://github.com/marketplace/actions/docker-login
     - name: Log in to the GitHub Container registry
