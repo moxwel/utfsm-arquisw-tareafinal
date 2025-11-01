@@ -13,7 +13,9 @@ from ...db.querys import (
     db_reactivate_channel,
     db_get_channel_member_ids,
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo, ChannelMember
+from ...schemas.channels import Channel, ChannelMember
+from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload, ChannelUserPayload, ChannelThreadPayload
+from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
 from ...schemas.http_responses import ErrorResponse
@@ -36,14 +38,14 @@ router = APIRouter(prefix="/v1/members", tags=["members"], responses=ROUTER_ERRO
         404: {"model": ErrorResponse, "description": "Recurso no encontrado."}
     }
 )
-async def add_user_to_channel(channel_id: str, user_id: str):
+async def add_user_to_channel(payload: ChannelUserPayload):
     """Agrega un usuario a un canal existente en MongoDB."""
     try:
-        channel = db_add_user_to_channel(channel_id, user_id)
+        channel = db_add_user_to_channel(payload.channel_id, payload.user_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario ya en el canal.")
-        added_user = next((u for u in channel.users if u.id == user_id), None)
-        payload = {"channel_id": channel.id, "user_id": user_id, "added_at": added_user.joined_at if added_user else None}
+        added_user = next((u for u in channel.users if u.id == payload.user_id), None)
+        payload = {"channel_id": channel.id, "user_id": payload.user_id, "added_at": added_user.joined_at if added_user else None}
         await publish_message_main(payload, "channel.user_added")
         return channel
     except (InvalidId, ValidationError) as e:
@@ -63,13 +65,13 @@ async def add_user_to_channel(channel_id: str, user_id: str):
         404: {"model": ErrorResponse, "description": "Recurso no encontrado."}
     }
 )
-async def remove_user_from_channel(channel_id: str, user_id: str):
+async def remove_user_from_channel(payload: ChannelUserPayload):
     """Elimina un usuario de un canal existente en MongoDB."""
     try:
-        channel = db_remove_user_from_channel(channel_id, user_id)
+        channel = db_remove_user_from_channel(payload.channel_id, payload.user_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado, el usuario no está en el canal o es el propietario.")
-        payload = {"channel_id": channel.id, "user_id": user_id, "removed_at": datetime.now().timestamp()}
+        payload = {"channel_id": channel.id, "user_id": payload.user_id, "removed_at": datetime.now().timestamp()}
         await publish_message_main(payload, "channel.user_removed")
         return channel
     except (InvalidId, ValidationError) as e:
@@ -82,7 +84,7 @@ async def remove_user_from_channel(channel_id: str, user_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al eliminar usuario del canal: {str(e)}")
 
-@router.get("/{user_id}", response_model=list[ChannelBasicInfo])
+@router.get("/{user_id}", response_model=list[ChannelBasicInfoResponse])
 async def read_channels_by_member(user_id: str):
     """Obtiene todos los canales en los que un usuario es miembro desde MongoDB."""
     try:
@@ -95,7 +97,7 @@ async def read_channels_by_member(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
 
-@router.get("/owner/{owner_id}", response_model=list[ChannelBasicInfo])
+@router.get("/owner/{owner_id}", response_model=list[ChannelBasicInfoResponse])
 async def read_channels_by_owner(owner_id: str):
     """Obtiene todos los canales asociados a un propietario específico desde MongoDB."""
     try:

@@ -1,5 +1,6 @@
 from mongoengine import Document, StringField, FloatField, BooleanField, ListField, EmbeddedDocument, EmbeddedDocumentField
-from ..schemas.channels import Channel, ChannelBasicInfo, ChannelMember
+from ..schemas.channels import Channel
+from ..schemas.responses import ChannelBasicInfoResponse
 from datetime import datetime
 
 
@@ -12,6 +13,7 @@ class ChannelDocument(Document):
     owner_id = StringField(required=True)
     name = StringField(required=True)
     users = ListField(EmbeddedDocumentField(ChannelMemberDocument), default=[])
+    threads = ListField(StringField(), default=[])
     channel_type = StringField(required=True, choices=["public", "private"], default="public")
     is_active = BooleanField(required=True, default=True)
     created_at = FloatField(required=True)
@@ -26,6 +28,7 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
         "owner_id": document.owner_id,
         "name": document.name,
         "users": [{"id": u.id, "joined_at": u.joined_at} for u in document.users],
+        "threads": document.threads,
         "channel_type": document.channel_type,
         "is_active": document.is_active,
         "created_at": document.created_at,
@@ -34,7 +37,7 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
     }
     return Channel.model_validate(data)
 
-def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicInfo | None:
+def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicInfoResponse | None:
     if not document:
         return None
     data = {
@@ -44,4 +47,4 @@ def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicIn
         "channel_type": document.channel_type,
         "created_at": document.created_at,
     }
-    return ChannelBasicInfo.model_validate(data)
+    return ChannelBasicInfoResponse.model_validate(data)
