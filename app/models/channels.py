@@ -1,5 +1,6 @@
 from mongoengine import Document, StringField, FloatField, BooleanField, ListField, EmbeddedDocument, EmbeddedDocumentField
-from ..schemas.channels import Channel, ChannelBasicInfo, ChannelMember
+from ..schemas.channels import Channel
+from ..schemas.responses import ChannelBasicInfoResponse
 from datetime import datetime
 
 
@@ -36,7 +37,7 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
     }
     return Channel.model_validate(data)
 
-def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicInfo | None:
+def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicInfoResponse | None:
     if not document:
         return None
     data = {
@@ -46,4 +47,4 @@ def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicIn
         "channel_type": document.channel_type,
         "created_at": document.created_at,
     }
-    return ChannelBasicInfo.model_validate(data)
+    return ChannelBasicInfoResponse.model_validate(data)

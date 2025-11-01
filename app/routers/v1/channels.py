@@ -13,7 +13,9 @@ from ...db.querys import (
     db_reactivate_channel,
     db_get_basic_channel_info
 )
-from ...schemas.channels import ChannelCreate, ChannelUpdate, Channel, ChannelID, ChannelUserAction, ChannelBasicInfo
+from ...schemas.channels import Channel
+from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload
+from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
 from ...schemas.http_responses import ErrorResponse
@@ -30,10 +32,10 @@ ROUTER_ERROR_RESPONSES = {
 router = APIRouter(prefix="/v1/channels", tags=["channels"], responses=ROUTER_ERROR_RESPONSES)
 
 @router.post("/", response_model=Channel, status_code=201)
-async def add_channel(channel_data: ChannelCreate):
+async def add_channel(channel_data_payload: ChannelCreatePayload):
     """Crea un nuevo canal y lo guarda en MongoDB."""
     try:
-        channel = db_create_channel(channel_data)
+        channel = db_create_channel(channel_data_payload)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear el canal.")
 
@@ -52,6 +54,7 @@ async def add_channel(channel_data: ChannelCreate):
 
 @router.get("/{channel_id}", response_model=Channel)
 async def read_channel(channel_id: str):
+    """Obtiene un canal existente por su ID."""
     try:
         channel = db_get_channel_by_id(channel_id)
         if channel is None:
@@ -66,14 +69,14 @@ async def read_channel(channel_id: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error interno del servidor") from exc
 
 @router.put("/{channel_id}", response_model=Channel)
-async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
+async def modify_channel(channel_id: str, channel_update_payload: ChannelUpdatePayload):
     """Actualiza un canal existente en MongoDB."""
     try:
-        channel = db_update_channel(channel_id, channel_update)
+        channel = db_update_channel(channel_id, channel_update_payload)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o sin datos para actualizar.")
 
-        updated_fields = channel_update.model_dump(exclude_unset=True, exclude_none=True)
+        updated_fields = channel_update_payload.model_dump(exclude_unset=True, exclude_none=True)
         payload = {"channel_id": channel.id, "updated_fields": updated_fields, "updated_at": channel.updated_at}
         await publish_message_main(payload, "channel.updated")
 
@@ -91,7 +94,7 @@ async def modify_channel(channel_id: str, channel_update: ChannelUpdate):
 
 @router.delete(
     "/{channel_id}",
-    response_model=ChannelID,
+    response_model=ChannelIDResponse,
     responses={
         409: {"model": ErrorResponse, "description": "Conflict: el canal ya estaba desactivado al momento de la solicitud."}
     }
@@ -112,7 +115,7 @@ async def remove_channel(channel_id: str):
         payload = {"channel_id": channel_id, "deleted_at": channel.deleted_at}
         await publish_message_main(payload, "channel.deleted")
         
-        return ChannelID(id=channel_id, status="desactivado")
+        return ChannelIDResponse(id=channel_id, status="desactivado")
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
@@ -125,7 +128,7 @@ async def remove_channel(channel_id: str):
 
 @router.post(
     "/{channel_id}/reactivate",
-    response_model=ChannelID,
+    response_model=ChannelIDResponse,
     responses={
         409: {"model": ErrorResponse, "description": "Conflict: el canal ya se encuentra activo; no requiere reactivación."}
     }
@@ -146,7 +149,7 @@ async def reactivate_channel(channel_id: str):
         payload = {"channel_id": channel.id, "reactivated_at": channel.updated_at}
         await publish_message_main(payload, "channel.reactivated")
 
-        return ChannelID(id=channel.id)
+        return ChannelIDResponse(id=channel.id)
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
@@ -157,7 +160,7 @@ async def reactivate_channel(channel_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al reactivar el canal: {str(e)}")
 
-@router.get("/{channel_id}/basic", response_model=ChannelBasicInfo)
+@router.get("/{channel_id}/basic", response_model=ChannelBasicInfoResponse)
 async def read_channel_basic_info(channel_id: str):
     """Obtiene información básica de un canal específico desde MongoDB."""
     try:
