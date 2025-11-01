@@ -3,6 +3,7 @@ from .routers.v1 import channels, members, threads
 from .db.conn import connect_to_mongo, close_mongo_connection
 from .events.conn import connect_to_rabbitmq, close_rabbitmq_connection
 import logging
+import socket
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -25,7 +26,8 @@ app.include_router(threads.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    hostname = socket.gethostname()
+    return {"message": "Hello World", "hostname": hostname}
 
 @app.get("/health")
 async def health_check():
