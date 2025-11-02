@@ -12,6 +12,18 @@ Este proyecto es un servicio (API) en FastAPI para gestión de canales y miembro
 - Docker Compose 2.40+
 - Python 3.13
 
+## IMAGEN DOCKER EN GHCR
+
+Cada vez que se hace un commit a la rama `docker-image`, se construye y publica una nueva imagen Docker en GitHub Container Registry (GHCR).
+
+Para descargar la imagen más reciente:
+
+```bash
+docker pull ghcr.io/moxwel/utfsm-arquisw-tareafinal:latest
+```
+
+Esta imagen se utiliza en el archivo `docker-compose.image.yml` para levantar los servicios, y en el archivo `kube-deployment.yml` para despliegue en Kubernetes.
+
 ## INSTRUCCIONES DE USO
 
 ### Paso 0: Verificar/ajustar variables de entorno (.env)
@@ -50,7 +62,8 @@ RABBITMQ_RETRY_DELAY=3
 docker compose -f docker-compose.image.yml up --build
 ```
 
-> [!WARNING] Utilizar `docker compose up --build` (sin `-f`) esta pensado para entorno de desarrollo ya que se aplica el archivo `docker-compose.override.yml`. Asegurese de usar el archivo correcto en producción.
+> [!WARNING]
+> Utilizar `docker compose up --build` (sin `-f`) esta pensado para entorno de desarrollo ya que se aplica el archivo `docker-compose.override.yml`. Asegurese de usar el archivo correcto en producción.
 
 Esto levanta:
 - `api` en el puerto 8000
@@ -77,3 +90,53 @@ La API intentará conectarse a RabbitMQ antes de iniciar el servidor. Reintentar
 - Crear, listar y eliminar canales desde la API (ver `/docs`).
 - Al crear/eliminar, el servicio publica eventos en RabbitMQ (por ejemplo, `channel.created` / `channel.deleted`).
 - Revise la cola/intercambio configurados en RabbitMQ para validar los mensajes.
+
+## DESPLIEGUE EN KUBERNETES
+
+El despliegue en un cluster de Kubernetes se puede realizar utilizando el archivo `kube-deployment.yml`. Asegúrese de tener un clúster de Kubernetes configurado y `kubectl` instalado.
+
+> [!NOTE]
+> Para un cluster local, se recomienda usar [Kind](https://kind.sigs.k8s.io/) con Docker, ya que se puede simular un cluster con multiples nodos fácilmente.
+
+Para desplegar el servicio:
+
+```bash
+kubectl apply -f kube-deployment.yml
+```
+
+Los elementos desplegados incluyen:
+- **MongoDB**: Un `Deployment` con 1 réplica, un `Service` de tipo `ClusterIP` y un `PersistentVolumeClaim` para la persistencia de datos.
+- **RabbitMQ**: Un `Deployment` con 1 réplica y un `Service` de tipo `ClusterIP`.
+- **API (FastAPI)**: Un `Deployment` con 3 réplicas, un `Service` de tipo `LoadBalancer` para exponer la API externamente, y un `ConfigMap` para la configuración.
+
+### Verificar el despliegue
+
+Para verificar el estado de todos los recursos desplegados:
+
+```bash
+kubectl get all
+```
+
+### Acceder al servicio
+
+El servicio de la API se expone a través de un `LoadBalancer`. Para obtener la IP externa y acceder a la API:
+
+1.  Obtén la IP externa del servicio:
+
+    ```bash
+    kubectl get service channel-api-service
+    ```
+
+2.  Busca la `EXTERNAL-IP` en la salida. Una vez que esté disponible, puedes acceder a la documentación de la API en `http://<EXTERNAL-IP>:8000/docs`.
+
+> [!NOTE]
+> Si se esta usando un clúster local (como Kind), es posible que el `EXTERNAL-IP` sea una IP interna de Docker. Para el caso de Kind, `LoadBalancer` causa que docker exponga el puerto del servicio en localhost. Entonces, considera `EXTERNAL-IP` como `localhost` y accede a la API en `http://localhost:8000/docs`.
+
+
+### Limpiar el despliegue
+
+Para eliminar todos los recursos creados en Kubernetes:
+
+```bash
+kubectl delete -f kube-deployment.yml
+```
