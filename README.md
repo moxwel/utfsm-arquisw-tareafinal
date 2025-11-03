@@ -110,7 +110,7 @@ kubectl apply -f kube-deployment.yml
 Los elementos desplegados incluyen:
 - **MongoDB**: Un `Deployment` con 1 réplica, un `Service` de tipo `ClusterIP` y un `PersistentVolumeClaim` para la persistencia de datos.
 - **RabbitMQ**: Un `Deployment` con 1 réplica y un `Service` de tipo `ClusterIP`.
-- **API (FastAPI)**: Un `Deployment` con 3 réplicas, un `Service` de tipo `LoadBalancer` para exponer la API externamente, y un `ConfigMap` para la configuración.
+- **API (FastAPI)**: Un `Deployment` con `HorizontalPodAutoscaler`, un `Service` de tipo `LoadBalancer` para exponer la API externamente, y un `ConfigMap` para la configuración.
 
 ### Paso 2: Verificar el despliegue
 
