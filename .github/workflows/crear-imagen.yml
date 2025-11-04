@@ -1,4 +1,4 @@
-name: Crear Imagen Docker
+name: Crear Imagen Docker y Desplegar
 
 on:
   push:
@@ -46,3 +46,19 @@ jobs:
         push: True
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-in-kubernetes-cluster:
+    needs: [ build-and-push-image ]
+    runs-on: bitnami/kubectl:latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v5
+
+    - name: Set up Kubeconfig
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+
+    - name: Apply config in cluster
+      run: kubectl apply -f kube_deployment.yaml
