@@ -40,7 +40,7 @@ async def add_channel(channel_data_payload: ChannelCreatePayload):
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear el canal.")
 
         payload = {"channel_id": channel.id, "name": channel.name, "owner_id": channel.owner_id, "created_at": channel.created_at}
-        await publish_message_main(payload, "channel.created")
+        await publish_message_main(payload, "channelService.v1.channel.created")
 
         return channel
     except HTTPException as exc:
@@ -78,7 +78,7 @@ async def modify_channel(channel_id: str, channel_update_payload: ChannelUpdateP
 
         updated_fields = channel_update_payload.model_dump(exclude_unset=True, exclude_none=True)
         payload = {"channel_id": channel.id, "updated_fields": updated_fields, "updated_at": channel.updated_at}
-        await publish_message_main(payload, "channel.updated")
+        await publish_message_main(payload, "channelService.v1.channel.updated")
 
         return channel
     except (InvalidId, ValidationError) as e:
@@ -113,7 +113,7 @@ async def remove_channel(channel_id: str):
         channel = db_deactivate_channel(channel_id)
         
         payload = {"channel_id": channel_id, "deleted_at": channel.deleted_at}
-        await publish_message_main(payload, "channel.deleted")
+        await publish_message_main(payload, "channelService.v1.channel.deleted")
         
         return ChannelIDResponse(id=channel_id, status="desactivado")
     except (InvalidId, ValidationError) as e:
@@ -147,7 +147,7 @@ async def reactivate_channel(channel_id: str):
         channel = db_reactivate_channel(channel_id)
 
         payload = {"channel_id": channel.id, "reactivated_at": channel.updated_at}
-        await publish_message_main(payload, "channel.reactivated")
+        await publish_message_main(payload, "channelService.v1.channel.reactivated")
 
         return ChannelIDResponse(id=channel.id)
     except (InvalidId, ValidationError) as e:

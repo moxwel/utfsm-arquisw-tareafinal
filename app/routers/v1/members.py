@@ -46,7 +46,7 @@ async def add_user_to_channel(payload: ChannelUserPayload):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario ya en el canal.")
         added_user = next((u for u in channel.users if u.id == payload.user_id), None)
         payload = {"channel_id": channel.id, "user_id": payload.user_id, "added_at": added_user.joined_at if added_user else None}
-        await publish_message_main(payload, "channel.user_added")
+        await publish_message_main(payload, "channelService.v1.user.added")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
@@ -72,7 +72,7 @@ async def remove_user_from_channel(payload: ChannelUserPayload):
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado, el usuario no está en el canal o es el propietario.")
         payload = {"channel_id": channel.id, "user_id": payload.user_id, "removed_at": datetime.now().timestamp()}
-        await publish_message_main(payload, "channel.user_removed")
+        await publish_message_main(payload, "channelService.v1.user.removed")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
