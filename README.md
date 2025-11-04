@@ -110,7 +110,7 @@ kubectl apply -f kube-deployment.yml
 Los elementos desplegados incluyen:
 - **MongoDB**: Un `Deployment` con 1 réplica, un `Service` de tipo `ClusterIP` y un `PersistentVolumeClaim` para la persistencia de datos.
 - **RabbitMQ**: Un `Deployment` con 1 réplica y un `Service` de tipo `ClusterIP`.
-- **API (FastAPI)**: Un `Deployment` con `HorizontalPodAutoscaler`, un `Service` de tipo `LoadBalancer` para exponer la API externamente, y un `ConfigMap` para la configuración.
+- **API (FastAPI)**: Un `Deployment` con `HorizontalPodAutoscaler`, un `Service` de tipo `ClusterIP`, y un `ConfigMap` para la configuración.
 
 ### Paso 2: Verificar el despliegue
 
@@ -124,7 +124,9 @@ Tambien se puede usar herramientas como [k9s](https://k9scli.io/) o [Lens](https
 
 ### Paso 3: Acceder al servicio
 
-El servicio de la API se expone a través de un `LoadBalancer`. Para obtener la IP externa y acceder a la API:
+El servicio de la API se expone a través de un `ClusterIP`.
+
+Para obtener la IP externa y acceder a la API en caso de usar `LoadBalancer`:
 
 ```bash
 kubectl get service channel-api-service

@@ -67,56 +67,56 @@ spec:
 
 # RABBITMQ
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: message-broker-service
-  labels:
-    app: message-broker
-spec:
-  type: ClusterIP
-  selector:
-    app: message-broker
-  ports:
-    - name: amqp
-      protocol: TCP
-      port: 5672
-      targetPort: 5672
-    - name: management
-      protocol: TCP
-      port: 15672
-      targetPort: 15672
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: message-broker-deployment
-  labels:
-    app: message-broker
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: message-broker
-  template:
-    metadata:
-      labels:
-        app: message-broker
-    spec:
-      containers:
-        - name: message-broker
-          image: rabbitmq:3-management-alpine
-          ports:
-            - containerPort: 5672
-            - containerPort: 15672
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
----
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: message-broker
+#   labels:
+#     app: message-broker
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: message-broker
+#   ports:
+#     - name: amqp
+#       protocol: TCP
+#       port: 5672
+#       targetPort: 5672
+#     - name: management
+#       protocol: TCP
+#       port: 15672
+#       targetPort: 15672
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: message-broker
+#   labels:
+#     app: message-broker
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: message-broker
+#   template:
+#     metadata:
+#       labels:
+#         app: message-broker
+#     spec:
+#       containers:
+#         - name: message-broker
+#           image: rabbitmq:3-management-alpine
+#           ports:
+#             - containerPort: 5672
+#             - containerPort: 15672
+#           resources:
+#             requests:
+#               cpu: "250m"
+#               memory: "256Mi"
+#             limits:
+#               cpu: "500m"
+#               memory: "512Mi"
+# ---
 
 # FASTAPI
 
@@ -129,7 +129,7 @@ metadata:
 data:
   MONGO_URL: "mongodb://channel-mongo-service:27017"
   MONGO_DB_NAME: "channel_service_db"
-  RABBITMQ_URL: "amqp://guest:guest@message-broker-service:5672/"
+  RABBITMQ_URL: "amqp://guest:guest@message-broker:5672/"
   RABBITMQ_MAIN_EXCHANGE: "channel_service_exchange"
   RABBITMQ_MAIN_QUEUE: "channel_service_queue"
   RABBITMQ_DLX: "dlx_exchange"
@@ -144,7 +144,7 @@ metadata:
   labels:
     app: channel-api
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: channel-api
   ports:
