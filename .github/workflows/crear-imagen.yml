@@ -10,7 +10,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   IMAGE_TAG: latest
-  KUBECONFIG: ${{ secrets.KUBE_CONFIG_DATA }}
 
 jobs:
   build-and-push-image:
@@ -62,6 +61,11 @@ jobs:
       uses: Azure/setup-kubectl@v4.0.0
       with:
         version: latest
+
+    - name: Set up Kubeconfig
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG_DATA }}" > $HOME/.kube/config
 
     - name: Deploy to Kubernetes
       run: kubectl apply -f kube-deployment.yaml
