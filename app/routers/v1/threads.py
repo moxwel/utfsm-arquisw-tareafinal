@@ -10,6 +10,8 @@ from ...db.querys import (
 from ...schemas.channels import Channel
 from ...schemas.payloads import ChannelThreadPayload
 from ...schemas.http_responses import ErrorResponse
+from ...events.conn import publish_message, publish_message_main, PublishError
+from datetime import datetime
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +32,9 @@ async def add_thread_to_channel(payload: ChannelThreadPayload):
         channel = db_add_thread_to_channel(payload.channel_id, payload.thread_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o el hilo ya existe en un canal.")
+        now = datetime.now().timestamp()
+        payload = {"channel_id": channel.id, "thread_id": payload.thread_id, "added_at": str(now)}
+        await publish_message_main(payload, "channelService.v1.thread.added")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
@@ -45,6 +50,9 @@ async def remove_thread_from_channel(payload: ChannelThreadPayload):
         channel = db_remove_thread_from_channel(payload.channel_id, payload.thread_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o el hilo no existe en el canal.")
+        now = datetime.now().timestamp()
+        payload = {"channel_id": channel.id, "thread_id": payload.thread_id, "removed_at": str(now)}
+        await publish_message_main(payload, "channelService.v1.thread.removed")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")

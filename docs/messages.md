@@ -85,3 +85,27 @@ A continuación se detallan los mensajes que este servicio emite.
     "removed_at": "float"
   }
   ```
+
+### `channelService.v1.thread.added`
+
+- **Descripción:** Se emite cuando un hilo es agregado a un canal.
+- **Payload:**
+  ```json
+  {
+    "channel_id": "string",
+    "thread_id": "string",
+    "added_at": "float"
+  }
+  ```
+
+### `channelService.v1.thread.removed`
+
+- **Descripción:** Se emite cuando un hilo es eliminado de un canal.
+- **Payload:**
+  ```json
+  {
+    "channel_id": "string",
+    "thread_id": "string",
+    "removed_at": "float"
+  }
+  ```
