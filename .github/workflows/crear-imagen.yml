@@ -20,12 +20,12 @@ jobs:
       
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v5
+      uses: actions/checkout@v5.0.0
 
     # https://github.com/marketplace/actions/docker-metadata-action
     - name: Extract metadata
       id: meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v5.8.0
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
@@ -33,7 +33,7 @@ jobs:
 
     # https://github.com/marketplace/actions/docker-login
     - name: Log in to the GitHub Container registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v3.6.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -41,7 +41,7 @@ jobs:
 
     # https://github.com/marketplace/actions/build-and-push-docker-images
     - name: Build and push Docker image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v6.18.0
       with:
         push: True
         tags: ${{ steps.meta.outputs.tags }}
@@ -53,17 +53,17 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v5
+      uses: actions/checkout@v5.0.0
 
     # https://github.com/marketplace/actions/kubectl-tool-installer
     - name: Kubectl tool installer
-      uses: Azure/setup-kubectl@v4
+      uses: Azure/setup-kubectl@v4.0.0
       with:
         version: latest
 
     # https://github.com/marketplace/actions/kubectl-simple
     - name: kubectl-simple
-      uses: steebchen/kubectl@v2
+      uses: steebchen/kubectl@v2.1.1
       with:
         config: ${{ secrets.KUBE_CONFIG_DATA }}
         command: apply -f kube-deployment.yaml
