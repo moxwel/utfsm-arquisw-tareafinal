@@ -10,6 +10,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   IMAGE_TAG: latest
+  K8S_FOLDER: ./k8s
 
 jobs:
   build-and-push-image:
@@ -68,4 +69,6 @@ jobs:
         echo "${{ secrets.KUBE_CONFIG_DATA }}" > $HOME/.kube/config
 
     - name: Deploy to Kubernetes
-      run: kubectl apply -f kube-deployment.yaml
+      run: |
+        kubectl apply -f ${{ env.K8S_FOLDER }}/k8s-mongo.yaml
+        kubectl apply -f ${{ env.K8S_FOLDER }}/k8s-channel-api.yaml

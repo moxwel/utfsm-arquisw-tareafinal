@@ -7,7 +7,6 @@ from .channels import ChannelType
 class ChannelCreatePayload(BaseModel):
     name: str
     owner_id: str
-    users: list[str]  # List of user IDs
     channel_type: ChannelType = ChannelType.PUBLIC
 
     class Config:
@@ -15,7 +14,6 @@ class ChannelCreatePayload(BaseModel):
             "example": {
                 "name": "general",
                 "owner_id": "owner123",
-                "users": ["user1", "user2"],
                 "channel_type": "public",
             }
         }
@@ -45,4 +43,3 @@ class ChannelUserPayload(BaseModel):
                 "user_id": "user123",
             }
         }
-

@@ -48,6 +48,7 @@ spec:
       containers:
         - name: api
           image: ghcr.io/moxwel/utfsm-arquisw-tareafinal:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           envFrom:
