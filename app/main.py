@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers.v1 import channels, members, threads
+from .routers.v1 import channels, members
 from .db.conn import connect_to_mongo, close_mongo_connection
 from .events.conn import connect_to_rabbitmq, close_rabbitmq_connection
 import logging
@@ -22,7 +22,6 @@ async def shutdown_event():
 
 app.include_router(channels.router)
 app.include_router(members.router)
-app.include_router(threads.router)
 
 @app.get("/")
 async def root():

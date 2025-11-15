@@ -16,7 +16,6 @@ class Channel(BaseModel):
     name: str
     owner_id: str
     users: list[ChannelMember]
-    threads: list[str] = []
     is_active: bool = True
     channel_type: ChannelType = ChannelType.PUBLIC
     created_at: float
@@ -38,7 +37,6 @@ class Channel(BaseModel):
                 {"id": "user2", "joined_at": 1760833769.259725},
                 {"id": "owner123", "joined_at": 1760833769.259725}
             ],
-            "threads": ["thread1_id", "thread2_id"],
             "is_active": True,
             "channel_type": "public",
             "created_at": 1760833769.259725,

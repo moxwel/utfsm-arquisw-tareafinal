@@ -14,7 +14,7 @@ from ...db.querys import (
     db_get_channel_member_ids,
 )
 from ...schemas.channels import Channel, ChannelMember
-from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload, ChannelUserPayload, ChannelThreadPayload
+from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload, ChannelUserPayload
 from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError

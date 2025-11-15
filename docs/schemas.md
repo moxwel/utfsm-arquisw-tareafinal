@@ -29,7 +29,6 @@ El modelo de datos principal para un canal.
   - `name` (string): Nombre del canal.
   - `owner_id` (string): ID del propietario del canal.
   - `users` (list[`ChannelMember`]): Lista de miembros en el canal.
-  - `threads` (list[string]): Lista de IDs de hilos en el canal.
   - `is_active` (boolean): Indica si el canal está activo. Por defecto `True`.
   - `channel_type` (`ChannelType`): El tipo de canal. Por defecto `public`.
   - `created_at` (float): Timestamp de creación.
@@ -64,14 +63,6 @@ Esquema para acciones de usuario en un canal (añadir/eliminar).
 - **Atributos:**
   - `channel_id` (string): ID del canal.
   - `user_id` (string): ID del usuario.
-
-### `ChannelThreadPayload`
-
-Esquema para acciones de hilos en un canal (añadir/eliminar).
-
-- **Atributos:**
-  - `channel_id` (string): ID del canal.
-  - `thread_id` (string): ID del hilo.
 
 ## Esquemas de Respuestas
 
