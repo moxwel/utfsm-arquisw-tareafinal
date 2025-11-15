@@ -27,6 +27,14 @@ def db_create_channel(channel_data: ChannelCreatePayload) -> Channel | None:
     document.save()
     return _document_to_channel(document)
 
+def db_get_all_channels_paginated(skip: int, limit: int) -> list[ChannelBasicInfoResponse]:
+    try:
+        documents = ChannelDocument.objects().skip(skip).limit(limit)
+        return [_document_to_channel_basic_info(doc) for doc in documents]
+    except Exception as e:
+        logger.exception("Error al obtener canales paginados")
+        return []
+
 def db_get_channel_by_id(channel_id: str) -> Channel | None:
     if not channel_id:
         return None
