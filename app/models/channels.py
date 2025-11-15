@@ -44,5 +44,6 @@ def _document_to_channel_basic_info(document: ChannelDocument) -> ChannelBasicIn
         "owner_id": document.owner_id,
         "channel_type": document.channel_type,
         "created_at": document.created_at,
+        "user_count": len(document.users)
     }
     return ChannelBasicInfoResponse.model_validate(data)

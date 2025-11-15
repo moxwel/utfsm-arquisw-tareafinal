@@ -6,6 +6,7 @@ from ..schemas.channels import Channel, ChannelMember
 from ..schemas.payloads import ChannelUserPayload, ChannelUpdatePayload, ChannelCreatePayload
 from ..schemas.responses import ChannelBasicInfoResponse
 import logging
+from bson import ObjectId
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,10 +28,24 @@ def db_create_channel(channel_data: ChannelCreatePayload) -> Channel | None:
     document.save()
     return _document_to_channel(document)
 
-def db_get_all_channels_paginated(skip: int, limit: int) -> list[ChannelBasicInfoResponse]:
+def db_get_all_channels_paginated(skip: int = 0, limit: int = 100) -> list[ChannelBasicInfoResponse]:
     try:
-        documents = ChannelDocument.objects().skip(skip).limit(limit)
-        return [_document_to_channel_basic_info(doc) for doc in documents]
+        pipeline = [
+            {
+                "$project": {
+                    "id": {"$toString": "$_id"},
+                    "name": "$name",
+                    "owner_id": "$owner_id",
+                    "channel_type": "$channel_type",
+                    "created_at": "$created_at",
+                    "user_count": {"$size": "$users"}
+                }
+            },
+            {"$skip": skip},
+            {"$limit": limit}
+        ]
+        aggregated_results = ChannelDocument.objects.aggregate(pipeline)
+        return [ChannelBasicInfoResponse.model_validate(doc) for doc in aggregated_results]
     except Exception as e:
         logger.exception("Error al obtener canales paginados")
         return []
@@ -45,6 +60,7 @@ def db_get_channel_by_id(channel_id: str) -> Channel | None:
         return None
     return _document_to_channel(document)
 
+# !! INEFICIENTE, USAR AGREGACIÓN
 def db_get_channels_by_owner_id(user_id: str) -> list[ChannelBasicInfoResponse]:
     if not user_id:
         return []
@@ -141,6 +157,7 @@ def db_remove_user_from_channel(channel_id: str, user_id: str) -> Channel | None
         return None
     return _document_to_channel(document)
 
+# !! INEFICIENTE, USAR AGREGACIÓN
 def db_get_channels_by_member_id(user_id: str) -> list[ChannelBasicInfoResponse]:
     if not user_id:
         return []
@@ -148,6 +165,7 @@ def db_get_channels_by_member_id(user_id: str) -> list[ChannelBasicInfoResponse]
     documents = ChannelDocument.objects(query)
     return [_document_to_channel_basic_info(doc) for doc in documents]
 
+# !! INEFICIENTE, USAR AGREGACIÓN
 def db_get_basic_channel_info(channel_id: str) -> ChannelBasicInfoResponse | None:
     if not channel_id:
         return None
@@ -158,13 +176,24 @@ def db_get_basic_channel_info(channel_id: str) -> ChannelBasicInfoResponse | Non
         return None
     return _document_to_channel_basic_info(document)
 
-def db_get_channel_member_ids(channel_id: str) -> list[ChannelMember] | None:
+def db_get_channel_member_ids(channel_id: str, skip: int = 0, limit: int = 100) -> list[ChannelMember] | None:
     if not channel_id:
         return None
     try:
-        query = Q(id=channel_id)
-        document = ChannelDocument.objects.only("users").get(query)
+        if not ChannelDocument.objects(id=channel_id).first():
+            return None
+
+        pipeline = [
+            {"$match": {"_id": ObjectId(channel_id)}},
+            {"$unwind": "$users"},
+            {"$replaceRoot": {"newRoot": "$users"}},
+            {"$skip": skip},
+            {"$limit": limit}
+        ]
+        aggregated_results = ChannelDocument.objects.aggregate(pipeline)
+        return [ChannelMember.model_validate(doc) for doc in aggregated_results]
     except (DoesNotExist, ValidationError):
         return None
-    
-    return [ChannelMember(id=u.id, joined_at=u.joined_at) for u in document.users]
+    except Exception as e:
+        logger.exception(f"Error al obtener miembros del canal {channel_id}")
+        return None
