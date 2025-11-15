@@ -46,14 +46,3 @@ class ChannelUserPayload(BaseModel):
             }
         }
 
-class ChannelThreadPayload(BaseModel):
-    channel_id: str
-    thread_id: str
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "channel_id": "60f7c0c2b4d1c8b4f8e4d2a1",
-                "thread_id": "thread123",
-            }
-        }

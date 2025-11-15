@@ -11,7 +11,8 @@ from ...db.querys import (
     db_remove_user_from_channel,
     db_get_channels_by_member_id,
     db_reactivate_channel,
-    db_get_basic_channel_info
+    db_get_basic_channel_info,
+    db_get_all_channels_paginated
 )
 from ...schemas.channels import Channel
 from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload
@@ -51,6 +52,26 @@ async def add_channel(channel_data_payload: ChannelCreatePayload):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al crear el canal: {str(e)}")
 
+@router.get("/", response_model=list[ChannelBasicInfoResponse])
+async def list_channels(page: int = 1, page_size: int = 10):
+    """Obtiene una lista paginada de información básica de todos los canales."""
+    page_size_limit = 100
+    
+    try:
+        if page_size > page_size_limit:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"El tamaño de página no puede exceder {page_size_limit}.")
+        if page < 1 or page_size < 1:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Los parámetros de paginación deben ser mayores a 0.")
+
+        offset = (page - 1) * page_size
+        channels = db_get_all_channels_paginated(skip=offset, limit=page_size)
+
+        return channels
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        logger.exception("Error interno al listar canales")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
 
 @router.get("/{channel_id}", response_model=Channel)
 async def read_channel(channel_id: str):

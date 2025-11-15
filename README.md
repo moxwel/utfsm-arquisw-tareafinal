@@ -104,13 +104,14 @@ El despliegue en un cluster de Kubernetes se puede realizar utilizando el archiv
 Para desplegar el servicio:
 
 ```bash
-kubectl apply -f kube-deployment.yml
+kubectl apply -f .\k8s\k8s-<servicio>.yaml
 ```
 
-Los elementos desplegados incluyen:
-- **MongoDB**: Un `Deployment` con 1 réplica, un `Service` de tipo `ClusterIP` y un `PersistentVolumeClaim` para la persistencia de datos.
-- **RabbitMQ**: Un `Deployment` con 1 réplica y un `Service` de tipo `ClusterIP`.
-- **API (FastAPI)**: Un `Deployment` con `HorizontalPodAutoscaler`, un `Service` de tipo `ClusterIP`, y un `ConfigMap` para la configuración.
+Donde `<servicio>` puede ser:
+- `mongo`: Un `StatefulSet` con 1 réplica y un `Service` de tipo `headless`.
+- `rabbitmq`: Un `Deployment` con 1 réplica y un `Service` de tipo `ClusterIP`.
+- `channel-api`: Un `Deployment` con `HorizontalPodAutoscaler`, un `Service` de tipo `ClusterIP`, y un `ConfigMap` para la configuración.
+- `channel-api-ca`: Un `Ingress` con TLS que apunta al servicio, y un `Certificate` para obtener certificados TLS de Let's Encrypt usando cert-manager para el dominio del `Ingress`.
 
 ### Paso 2: Verificar el despliegue
 

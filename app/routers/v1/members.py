@@ -14,7 +14,7 @@ from ...db.querys import (
     db_get_channel_member_ids,
 )
 from ...schemas.channels import Channel, ChannelMember
-from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload, ChannelUserPayload, ChannelThreadPayload
+from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload, ChannelUserPayload
 from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 import logging
 from ...events.conn import publish_message, publish_message_main, PublishError
@@ -117,10 +117,17 @@ async def read_channels_by_owner(owner_id: str):
         404: {"model": ErrorResponse, "description": "Recurso no encontrado."}
     }
 )
-async def read_channel_member_ids(channel_id: str):
+async def read_channel_member_ids(channel_id: str, page: int = 1, page_size: int = 100):
     """Obtiene los IDs de los miembros de un canal específico desde MongoDB."""
+    page_size_limit = 100
     try:
-        member_ids = db_get_channel_member_ids(channel_id)
+        if page_size > page_size_limit:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"El tamaño de página no puede exceder {page_size_limit}.")
+        if page < 1 or page_size < 1:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Los parámetros de paginación deben ser mayores a 0.")
+        
+        offset = (page - 1) * page_size
+        member_ids = db_get_channel_member_ids(channel_id, skip=offset, limit=page_size)
         if member_ids is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return member_ids

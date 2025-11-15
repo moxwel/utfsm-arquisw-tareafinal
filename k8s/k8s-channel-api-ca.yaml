@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: channel-api-ingress
+  labels:
+    app: channel-api
+spec:
+  tls:
+  - hosts:
+    - channel-api.inf326.nursoft.dev
+    # - channel-api-134-199-176-197.nip.io
+    secretName: channel-api-tls
+  ingressClassName: nginx
+  rules:
+  - host: channel-api.inf326.nursoft.dev
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: channel-api-service
+              port:
+                number: 8000
+  # - host: channel-api-134-199-176-197.nip.io
+  #   http:
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  #         backend:
+  #           service:
+  #             name: channel-api-service
+  #             port:
+  #               number: 8000
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: channel-api-certificate
+  labels:
+    app: channel-api
+spec:
+  secretName: channel-api-tls
+  dnsNames:
+  - channel-api.inf326.nursoft.dev
+  # - channel-api-134-199-176-197.nip.io
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

@@ -29,7 +29,6 @@ Crea un nuevo canal.
         "joined_at": "float"
       }
     ],
-    "threads": [],
     "is_active": true,
     "channel_type": "public",
     "created_at": "float",
@@ -168,51 +167,3 @@ Obtiene todos los miembros de un canal.
     }
   ]
   ```
-
-## Hilos
-
-### `POST /v1/threads/`
-
-Agrega un hilo a un canal.
-
-- **Body (`ChannelThreadPayload`):**
-  ```json
-  {
-    "channel_id": "string",
-    "thread_id": "string"
-  }
-  ```
-- **Respuesta Exitosa (200, `Channel`):**
-  - Devuelve el objeto del canal actualizado con el nuevo hilo.
-
-### `DELETE /v1/threads/`
-
-Elimina un hilo de un canal.
-
-- **Body (`ChannelThreadPayload`):**
-  ```json
-  {
-    "channel_id": "string",
-    "thread_id": "string"
-  }
-  ```
-- **Respuesta Exitosa (200, `Channel`):**
-  - Devuelve el objeto del canal actualizado sin el hilo.
-
-### `GET /v1/threads/channel/{channel_id}`
-
-Obtiene todos los hilos de un canal.
-
-- **Parámetros de Ruta:**
-  - `channel_id` (string): El ID del canal.
-- **Respuesta Exitosa (200, `list[string]`):**
-  - Devuelve una lista de IDs de los hilos del canal.
-
-### `GET /v1/threads/{thread_id}`
-
-Obtiene el canal al que pertenece un hilo.
-
-- **Parámetros de Ruta:**
-  - `thread_id` (string): El ID del hilo.
-- **Respuesta Exitosa (200, `Channel`):**
-  - Devuelve el objeto del canal que contiene el hilo.
