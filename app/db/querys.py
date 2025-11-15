@@ -18,13 +18,9 @@ def db_create_channel(channel_data: ChannelCreatePayload) -> Channel | None:
     
     now = datetime.now().timestamp()
     
-    user_ids = payload.pop("users", [])
-    if payload["owner_id"] not in user_ids:
-        user_ids.append(payload["owner_id"])
+    user_list = [{"id": payload["owner_id"], "joined_at": now}]
     
-    users_with_timestamp = [ChannelMemberDocument(id=uid, joined_at=now) for uid in user_ids]
-
-    document = ChannelDocument(**payload, users=users_with_timestamp, created_at=now, updated_at=now)
+    document = ChannelDocument(**payload, users=user_list, created_at=now, updated_at=now)
     document.save()
     return _document_to_channel(document)
 
