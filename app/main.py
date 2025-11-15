@@ -8,7 +8,7 @@ import socket
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-app = FastAPI()
+app = FastAPI(title="Servicio de Canales", version="1.0.0")
 
 @app.on_event("startup")
 async def startup_event():
