@@ -7,12 +7,12 @@ metadata:
 spec:
   tls:
   - hosts:
-    - channel-api.inf326.nursoft.dev
-    # - channel-api-134-199-176-197.nip.io
+    - channel-api.inf326.nur.dev
+    - channel-api-134-199-176-197.nip.io
     secretName: channel-api-tls
   ingressClassName: nginx
   rules:
-  - host: channel-api.inf326.nursoft.dev
+  - host: channel-api.inf326.nur.dev
     http:
       paths:
         - path: /
@@ -22,16 +22,16 @@ spec:
               name: channel-api-service
               port:
                 number: 8000
-  # - host: channel-api-134-199-176-197.nip.io
-  #   http:
-  #     paths:
-  #       - path: /
-  #         pathType: Prefix
-  #         backend:
-  #           service:
-  #             name: channel-api-service
-  #             port:
-  #               number: 8000
+  - host: channel-api-134-199-176-197.nip.io
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: channel-api-service
+              port:
+                number: 8000
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -42,8 +42,8 @@ metadata:
 spec:
   secretName: channel-api-tls
   dnsNames:
-  - channel-api.inf326.nursoft.dev
-  # - channel-api-134-199-176-197.nip.io
+  - channel-api.inf326.nur.dev
+  - channel-api-134-199-176-197.nip.io
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
