@@ -78,20 +78,14 @@ def test_add_user_to_channel_success(client: TestClient, monkeypatch):
     body = {"channel_id": "chan-1", "user_id": "user-123"}
 
     response = client.post("/v1/members/", json=body)
-    assert response.status_code == 200  # o 201, según tu router
+    assert response.status_code == 200
 
     data = response.json()
-    # El endpoint está devolviendo el Channel completo => usamos "_id"
     assert data["_id"] == "chan-1"
     assert data["owner_id"] == "owner-123"
 
 
 def test_add_user_to_channel_not_found_or_already_member(client: TestClient, monkeypatch):
-    """
-    Segundo test del POST:
-    si el canal no existe o el usuario ya está, db_add_user_to_channel devuelve None
-    y el endpoint debe responder 404.
-    """
     def fake_db_add_user_to_channel(channel_id: str, user_id: str):
         return None
 
@@ -105,9 +99,6 @@ def test_add_user_to_channel_not_found_or_already_member(client: TestClient, mon
 # -------------------- DELETE /v1/members/ -------------------- #
 
 def test_remove_user_from_channel_success(client: TestClient, monkeypatch):
-    """
-    Caso: se elimina el usuario correctamente del canal.
-    """
     member = make_fake_member("user-123")
     fake_channel = make_fake_channel(
         channel_id="chan-1",
@@ -128,15 +119,10 @@ def test_remove_user_from_channel_success(client: TestClient, monkeypatch):
 
     if response.status_code == 200:
         data = response.json()
-        # Igual que en el add: Channel completo con "_id"
         assert data["_id"] == "chan-1"
 
 
 def test_remove_user_from_channel_not_found(client: TestClient, monkeypatch):
-    """
-    Segundo test del DELETE:
-    canal no encontrado o usuario no está en el canal -> 404.
-    """
     def fake_db_remove_user_from_channel(channel_id: str, user_id: str):
         return None
 
@@ -150,9 +136,6 @@ def test_remove_user_from_channel_not_found(client: TestClient, monkeypatch):
 # -------------------- GET /v1/members/{user_id} -------------------- #
 
 def test_list_channels_by_member_success(client: TestClient, monkeypatch):
-    """
-    Lista de canales donde participa un usuario.
-    """
     def fake_db_get_channels_by_member_id(user_id: str):
         assert user_id == "user-123"
         return [
@@ -175,9 +158,6 @@ def test_list_channels_by_member_success(client: TestClient, monkeypatch):
 
 
 def test_list_channels_by_member_empty(client: TestClient, monkeypatch):
-    """
-    Segundo test: usuario sin canales -> lista vacía (200 OK).
-    """
     def fake_db_get_channels_by_member_id(user_id: str):
         return []
 
@@ -233,9 +213,6 @@ def test_list_channels_by_owner_empty(client: TestClient, monkeypatch):
 # -------------------- GET /v1/members/channel/{channel_id} -------------------- #
 
 def test_list_members_by_channel_success(client: TestClient, monkeypatch):
-    """
-    Devuelve los miembros de un canal (paginados).
-    """
     def fake_db_get_channel_member_ids(channel_id: str, skip: int, limit: int):
         assert channel_id == "chan-1"
         return [make_fake_member("user-1"), make_fake_member("user-2")]
@@ -255,8 +232,5 @@ def test_list_members_by_channel_success(client: TestClient, monkeypatch):
 
 
 def test_list_members_by_channel_invalid_page_size(client: TestClient):
-    """
-    Segundo test: page_size inválido (por ejemplo, >100) -> 422 según tu lógica.
-    """
     response = client.get("/v1/members/channel/chan-1?page=1&page_size=1000")
     assert response.status_code == 422

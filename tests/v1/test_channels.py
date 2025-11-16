@@ -17,11 +17,10 @@ def make_fake_channel(
     is_active: bool = True,
     channel_type: str = "public",
 ) -> Channel:
-    """Construye un Channel Pydantic para usar en mocks."""
     now = time.time()
     data = {
         "id": channel_id,
-        "_id": channel_id,  # alias de Mongo si lo usas
+        "_id": channel_id,
         "name": name,
         "owner_id": owner_id,
         "users": [],
@@ -41,7 +40,6 @@ def make_fake_basic_info(
     channel_type: str = "public",
     user_count: int = 0,
 ) -> ChannelBasicInfoResponse:
-    """Construye un ChannelBasicInfoResponse para listar canales."""
     now = time.time()
     data = {
         "id": channel_id,
@@ -71,12 +69,9 @@ def test_create_channel_success(client: TestClient, monkeypatch):
     }
 
     response = client.post("/v1/channels/", json=body)
-
-    # Vimos en el log que devuelve 201 Created
     assert response.status_code == 201
 
     data = response.json()
-    # La API devuelve _id (alias de id), no "id"
     assert "_id" in data
     assert data["_id"] == fake_channel.id
     assert data["name"] == "general"
@@ -84,11 +79,6 @@ def test_create_channel_success(client: TestClient, monkeypatch):
 
 
 def test_create_channel_validation_error(client: TestClient):
-    """
-    Segundo test del POST:
-    si falta un campo requerido, FastAPI debería responder 422.
-    """
-    # Falta owner_id
     body = {
         "name": "general",
         "channel_type": "public",
@@ -123,10 +113,6 @@ def test_list_channels_success(client: TestClient, monkeypatch):
 
 
 def test_list_channels_invalid_page_size(client: TestClient):
-    """
-    Segundo test del GET /v1/channels/:
-    page_size demasiado grande -> 422 según tu validación.
-    """
     response = client.get("/v1/channels/?page=1&page_size=1000")
     assert response.status_code == 422
 
@@ -146,7 +132,6 @@ def test_get_channel_by_id_success(client: TestClient, monkeypatch):
     assert response.status_code == 200
 
     data = response.json()
-    # La respuesta usa "_id" como clave
     assert data["_id"] == "abc123"
     assert data["name"] == "general"
     assert data["owner_id"] == "owner-123"
@@ -166,7 +151,6 @@ def test_get_channel_by_id_not_found(client: TestClient, monkeypatch):
 
 def test_update_channel_success(client: TestClient, monkeypatch):
     def fake_db_update_channel(channel_id: str, update_data):
-        # Devolvemos un canal con el nombre actualizado
         return make_fake_channel(channel_id=channel_id, name="nuevo-nombre")
 
     monkeypatch.setattr(channels_router, "db_update_channel", fake_db_update_channel)
@@ -177,7 +161,6 @@ def test_update_channel_success(client: TestClient, monkeypatch):
     assert response.status_code == 200
 
     data = response.json()
-    # Comprobamos usando "_id"
     assert data["_id"] == "abc123"
     assert data["name"] == "nuevo-nombre"
 
@@ -195,9 +178,6 @@ def test_update_channel_not_found(client: TestClient, monkeypatch):
 # -------------------- DELETE /v1/channels/{channel_id} -------------------- #
 
 def test_deactivate_channel_success(client: TestClient, monkeypatch):
-    """
-    Caso: canal existe y está activo -> se desactiva correctamente.
-    """
     active_channel = make_fake_channel(is_active=True)
 
     def fake_db_get_channel_by_id(channel_id: str):
@@ -210,20 +190,15 @@ def test_deactivate_channel_success(client: TestClient, monkeypatch):
     monkeypatch.setattr(channels_router, "db_deactivate_channel", fake_db_deactivate_channel)
 
     response = client.delete("/v1/channels/abc123")
-    # Puede ser 200 o 204 según tu implementación
     assert response.status_code in (200, 204)
 
     if response.status_code == 200:
         data = response.json()
-        # en tu router probablemente devuelves ChannelIDResponse con "id"
         assert "id" in data
         assert data["id"] == "abc123"
 
 
 def test_deactivate_channel_already_inactive(client: TestClient, monkeypatch):
-    """
-    Segundo test: canal ya inactivo -> 409 (conflicto).
-    """
     inactive_channel = make_fake_channel(is_active=False)
 
     def fake_db_get_channel_by_id(channel_id: str):
@@ -253,7 +228,6 @@ def test_reactivate_channel_success(client: TestClient, monkeypatch):
     assert response.status_code in (200, 201)
 
     data = response.json()
-    # aquí tu router probablemente devuelve ChannelIDResponse con "id"
     assert "id" in data
     assert data["id"] == "abc123"
 
