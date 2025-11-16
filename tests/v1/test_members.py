@@ -8,6 +8,12 @@ from app.schemas.responses import ChannelBasicInfoResponse
 from app.routers.v1 import members as members_router
 
 
+def make_fake_member(user_id: str, joined_at: float | None = None) -> ChannelMember:
+    if joined_at is None:
+        joined_at = time.time()
+    return ChannelMember.model_validate({"id": user_id, "joined_at": joined_at})
+
+
 def make_fake_channel(
     channel_id: str = "fake-channel-id",
     name: str = "general",
@@ -32,12 +38,6 @@ def make_fake_channel(
         "deleted_at": None,
     }
     return Channel.model_validate(data)
-
-
-def make_fake_member(user_id: str, joined_at: float | None = None) -> ChannelMember:
-    if joined_at is None:
-        joined_at = time.time()
-    return ChannelMember.model_validate({"id": user_id, "joined_at": joined_at})
 
 
 def make_fake_basic_info(
@@ -81,7 +81,8 @@ def test_add_user_to_channel_success(client: TestClient, monkeypatch):
     assert response.status_code == 200  # o 201, según tu router
 
     data = response.json()
-    assert data["id"] == "chan-1"
+    # El endpoint está devolviendo el Channel completo => usamos "_id"
+    assert data["_id"] == "chan-1"
     assert data["owner_id"] == "owner-123"
 
 
@@ -127,7 +128,8 @@ def test_remove_user_from_channel_success(client: TestClient, monkeypatch):
 
     if response.status_code == 200:
         data = response.json()
-        assert data["id"] == "chan-1"
+        # Igual que en el add: Channel completo con "_id"
+        assert data["_id"] == "chan-1"
 
 
 def test_remove_user_from_channel_not_found(client: TestClient, monkeypatch):

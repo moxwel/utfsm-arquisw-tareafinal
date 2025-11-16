@@ -72,13 +72,15 @@ def test_create_channel_success(client: TestClient, monkeypatch):
 
     response = client.post("/v1/channels/", json=body)
 
-    # Puede ser 200 o 201, según definiste el endpoint
-    assert response.status_code in (200, 201)
+    # Vimos en el log que devuelve 201 Created
+    assert response.status_code == 201
 
     data = response.json()
-    # Lo usual es que se devuelva algo con "id"
-    assert "id" in data
-    assert data["id"] == fake_channel.id
+    # La API devuelve _id (alias de id), no "id"
+    assert "_id" in data
+    assert data["_id"] == fake_channel.id
+    assert data["name"] == "general"
+    assert data["owner_id"] == "owner-123"
 
 
 def test_create_channel_validation_error(client: TestClient):
@@ -144,7 +146,8 @@ def test_get_channel_by_id_success(client: TestClient, monkeypatch):
     assert response.status_code == 200
 
     data = response.json()
-    assert data["id"] == "abc123"
+    # La respuesta usa "_id" como clave
+    assert data["_id"] == "abc123"
     assert data["name"] == "general"
     assert data["owner_id"] == "owner-123"
 
@@ -174,7 +177,8 @@ def test_update_channel_success(client: TestClient, monkeypatch):
     assert response.status_code == 200
 
     data = response.json()
-    assert data["id"] == "abc123"
+    # Comprobamos usando "_id"
+    assert data["_id"] == "abc123"
     assert data["name"] == "nuevo-nombre"
 
 
@@ -211,6 +215,8 @@ def test_deactivate_channel_success(client: TestClient, monkeypatch):
 
     if response.status_code == 200:
         data = response.json()
+        # en tu router probablemente devuelves ChannelIDResponse con "id"
+        assert "id" in data
         assert data["id"] == "abc123"
 
 
@@ -247,6 +253,8 @@ def test_reactivate_channel_success(client: TestClient, monkeypatch):
     assert response.status_code in (200, 201)
 
     data = response.json()
+    # aquí tu router probablemente devuelve ChannelIDResponse con "id"
+    assert "id" in data
     assert data["id"] == "abc123"
 
 
