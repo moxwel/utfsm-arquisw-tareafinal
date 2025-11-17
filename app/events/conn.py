@@ -88,7 +88,29 @@ rabbit_clients = {
         
         dlq_queue_name=os.getenv("RABBITMQ_DLQ", "dlq_queue"),
         dlq_durable=True
-    )
+    ),
+    # "users": RabbitMQClient(
+    #     rabbitmq_url=os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/"),
+    #     
+    #     exchange_name="users_exchange",
+    #     exchange_type=aio_pika.ExchangeType.TOPIC,
+    #     exchange_durable=True,
+    #     
+    #     queue_name="users_queue",
+    #     queue_durable=True,
+    #     queue_routing_key="users.#",
+    #     queue_arguments={
+    #         "x-dead-letter-exchange": "users_dlx",
+    #         "x-dead-letter-routing-key": "users_dlq",
+    #     },
+    #     
+    #     dlx_exchange_name="users_dlx",
+    #     dlx_exchange_type=aio_pika.ExchangeType.FANOUT,
+    #     dlx_durable=True,
+    #     
+    #     dlq_queue_name="users_dlq",
+    #     dlq_durable=True
+    # )
 }
 
 async def _setup_rabbitmq(client: RabbitMQClient):
@@ -181,3 +203,6 @@ async def close_rabbitmq_connection_all():
         logger.info(f"Cerrando cliente '{client_name}'...")
         await close_rabbitmq_connection(client)
     logger.info("Todas las conexiones RabbitMQ cerradas.")
+
+# Alias para acceso externo
+rabbitmq_clients = rabbit_clients
