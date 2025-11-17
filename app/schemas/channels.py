@@ -1,7 +1,7 @@
 from typing import Optional
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class ChannelType(str, Enum):
     PUBLIC = "public"
@@ -22,25 +22,26 @@ class Channel(BaseModel):
     updated_at: float
     deleted_at: Optional[float] = None
 
-    class Config:
-        validate_by_name = True
+    model_config = ConfigDict(
+        populate_by_name = True,
         json_encoders = {
-            datetime: lambda v: v.isoformat(),
-        }
+            datetime: lambda v: v.isoformat()
+        },
         json_schema_extra = {
             "example": {
-            "_id": "68f430e95055d3561d1d3167",
-            "name": "general",
-            "owner_id": "owner123",
-            "users": [
-                {"id": "user1", "joined_at": 1760833769.259725},
-                {"id": "user2", "joined_at": 1760833769.259725},
-                {"id": "owner123", "joined_at": 1760833769.259725}
-            ],
-            "is_active": True,
-            "channel_type": "public",
-            "created_at": 1760833769.259725,
-            "updated_at": 1760833769.259725,
-            "deleted_at": None
+                "_id": "68f430e95055d3561d1d3167",
+                "name": "general",
+                "owner_id": "owner123",
+                "users": [
+                    {"id": "user1", "joined_at": 1760833769.259725},
+                    {"id": "user2", "joined_at": 1760833769.259725},
+                    {"id": "owner123", "joined_at": 1760833769.259725}
+                ],
+                "is_active": True,
+                "channel_type": "public",
+                "created_at": 1760833769.259725,
+                "updated_at": 1760833769.259725,
+                "deleted_at": None
             }
-        }
+        },
+    )

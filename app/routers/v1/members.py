@@ -49,7 +49,7 @@ async def add_user_to_channel(payload: ChannelUserPayload):
         await publish_message_main(payload, "channelService.v1.user.added")
         return channel
     except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except PublishError as e:
@@ -75,7 +75,7 @@ async def remove_user_from_channel(payload: ChannelUserPayload):
         await publish_message_main(payload, "channelService.v1.user.removed")
         return channel
     except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except PublishError as e:
@@ -91,7 +91,7 @@ async def read_channels_by_member(user_id: str):
         channels = db_get_channels_by_member_id(user_id)
         return channels
     except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de usuario inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de usuario inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except Exception as e:
@@ -104,7 +104,7 @@ async def read_channels_by_owner(owner_id: str):
         channels = db_get_channels_by_owner_id(owner_id)
         return channels
     except (InvalidId, ValidationError):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de servidor inválido.")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="ID de servidor inválido.")
     except HTTPException as exc:
         raise exc
     except Exception as e:
@@ -122,9 +122,9 @@ async def read_channel_member_ids(channel_id: str, page: int = 1, page_size: int
     page_size_limit = 100
     try:
         if page_size > page_size_limit:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"El tamaño de página no puede exceder {page_size_limit}.")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"El tamaño de página no puede exceder {page_size_limit}.")
         if page < 1 or page_size < 1:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Los parámetros de paginación deben ser mayores a 0.")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Los parámetros de paginación deben ser mayores a 0.")
         
         offset = (page - 1) * page_size
         member_ids = db_get_channel_member_ids(channel_id, skip=offset, limit=page_size)
@@ -132,7 +132,7 @@ async def read_channel_member_ids(channel_id: str, page: int = 1, page_size: int
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return member_ids
     except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except Exception as e:
