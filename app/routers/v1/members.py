@@ -18,7 +18,7 @@ from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload, Chan
 from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 import logging
 from ...events.publish import publish_message, publish_message_main, PublishError
-from ...events.conn import rabbit_clients
+from ...events.clients import rabbit_clients
 from ...schemas.http_responses import ErrorResponse
 from datetime import datetime
 
