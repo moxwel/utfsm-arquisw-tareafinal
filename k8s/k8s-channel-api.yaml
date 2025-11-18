@@ -7,6 +7,7 @@ metadata:
 data:
   MONGO_URL: "mongodb://channel-mongo-service:27017"
   MONGO_DB_NAME: "channel_service_db"
+
   RABBITMQ_URL: "amqp://guest:guest@message-broker:5672/"
   RABBITMQ_MAIN_EXCHANGE: "channel_service_exchange"
   RABBITMQ_MAIN_QUEUE: "channel_service_queue"
@@ -20,6 +21,12 @@ data:
   USERS_RABBITMQ_QUEUE_ROUTING_KEY: "user.#"
   USERS_RABBITMQ_DLX: "channel_service_users_dlx"
   USERS_RABBITMQ_DLQ: "channel_service_users_dlq"
+
+  MODERATION_RABBITMQ_EXCHANGE: "moderation_events"
+  MODERATION_RABBITMQ_QUEUE: "channel_service_moderation_queue"
+  MODERATION_RABBITMQ_QUEUE_ROUTING_KEY: "moderation.#"
+  MODERATION_RABBITMQ_DLX: "channel_service_moderation_dlx"
+  MODERATION_RABBITMQ_DLQ: "channel_service_moderation_dlq"
 ---
 apiVersion: v1
 kind: Service

@@ -4,6 +4,7 @@ from .routers.v1 import channels, members
 from .db.conn import connect_to_mongo, close_mongo_connection
 from .events.conn import connect_to_rabbitmq_all, close_rabbitmq_connection_all, rabbitmq_clients
 from .events.listeners.users import create_user_listeners
+from .events.listeners.moderation import create_moderation_listeners
 import logging
 import socket
 
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
     connect_to_mongo()
     await connect_to_rabbitmq_all()
     await create_user_listeners(rabbitmq_clients)
+    await create_moderation_listeners(rabbitmq_clients)
     yield
     # Equivalente a on.event("shutdown")
     logging.info("Cerrando conexiones a servicios externos...")
