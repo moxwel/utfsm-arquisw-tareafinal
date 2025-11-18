@@ -14,6 +14,8 @@ async def publish_message_main(client, message_body: dict, routing_key: str):
         logger.error("No hay un canal de RabbitMQ disponible para publicar.")
         raise ConnectionError("La conexión a RabbitMQ no está establecida.")
 
+    message_body["type"] = routing_key
+
     message_payload = aio_pika.Message(
         body=json.dumps(message_body).encode('utf-8'),
         delivery_mode=aio_pika.DeliveryMode.PERSISTENT
@@ -34,6 +36,8 @@ async def publish_message(client, message_body: dict, routing_key: str, exchange
     if not client.channel:
         logger.error("No hay un canal de RabbitMQ disponible para publicar.")
         raise ConnectionError("La conexión a RabbitMQ no está establecida.")
+
+    message_body["type"] = routing_key
 
     message_payload = aio_pika.Message(
         body=json.dumps(message_body).encode('utf-8'),
