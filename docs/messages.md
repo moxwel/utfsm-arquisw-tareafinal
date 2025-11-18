@@ -1,14 +1,21 @@
 # Documentación de Mensajes del Broker
 
-Esta es la documentación para los mensajes que se emiten a través del broker de mensajería (RabbitMQ). Actualmente, este servicio solo emite mensajes y no consume eventos de otros servicios.
+Esta documentación detalla los mensajes que el servicio emite y consume a través del broker de mensajería (RabbitMQ).
 
-## Generalidades
+## Configuración General
 
-Todos los mensajes se publican en el exchange principal (configurado a través de la variable de entorno `RABBITMQ_MAIN_EXCHANGE`, por defecto `main_exchange`). Los mensajes utilizan un `routing_key` que sigue el formato `servicio.version.recurso.evento`.
+El servicio maneja múltiples clientes de RabbitMQ definidos en [`app/events/clients.py`](../app/events/clients.py).
+
+- **Exchange Principal (Emisión):** Configurado vía `RABBITMQ_MAIN_EXCHANGE` (default: `channel_service_exchange`).
+- **Exchange de Usuarios (Consumo):** Configurado vía `USERS_RABBITMQ_EXCHANGE` (default: `users.events`).
+
+---
 
 ## Mensajes Emitidos
 
-A continuación se detallan los mensajes que este servicio emite.
+Estos mensajes son publicados por el servicio de canales hacia el exchange principal cuando ocurren cambios en los recursos.
+
+Todos los mensajes incluyen un campo llamado `type` en el payload que indica el tipo de evento (es decir, la routing key).
 
 ### `channelService.v1.channel.created`
 
@@ -85,3 +92,18 @@ A continuación se detallan los mensajes que este servicio emite.
     "removed_at": "float"
   }
   ```
+
+## Mensajes Consumidos
+
+El servicio escucha eventos provenientes de otros dominios (actualmente el dominio de Usuarios).
+
+### Eventos de Usuarios (`.#`)
+
+El servicio se suscribe al exchange de usuarios para mantener la consistencia de datos (por ejemplo, si un usuario actualiza su perfil o es eliminado).
+
+- **Exchange:** `user.events`
+- **Cola:** `channel_service_users_queue`
+- **Routing Key:** `user.#` (Escucha todos los eventos que comiencen con `user.`, como `user.created`, `user.updated`, etc.)
+
+**Procesamiento:**
+Actualmente, los mensajes son recibidos y logueados por el callback en [`app/events/callbacks/users.py`](../app/events/callbacks/users.py). La lógica específica de negocio está pendiente de implementación.

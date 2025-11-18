@@ -90,7 +90,7 @@ rabbit_clients = {
 
         queue_name=os.getenv("USERS_RABBITMQ_QUEUE", "channel_service_users_queue"),
         queue_durable=True,
-        queue_routing_key=os.getenv("USERS_RABBITMQ_QUEUE_ROUTING_KEY", "users.#"),
+        queue_routing_key=os.getenv("USERS_RABBITMQ_QUEUE_ROUTING_KEY", "user.#"),
         queue_arguments={
             "x-dead-letter-exchange": os.getenv("USERS_RABBITMQ_DLX", "channel_service_users_dlx"),
             "x-dead-letter-routing-key": os.getenv("USERS_RABBITMQ_DLQ", "channel_service_users_dlq"),
