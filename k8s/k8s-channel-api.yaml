@@ -14,6 +14,12 @@ data:
   RABBITMQ_DLQ: "channel_service_dlq"
   RABBITMQ_MAX_RETRIES: "20"
   RABBITMQ_RETRY_DELAY: "5"
+
+  USERS_RABBITMQ_EXCHANGE: "users.events"
+  USERS_RABBITMQ_QUEUE: "channel_service_users_queue"
+  USERS_RABBITMQ_QUEUE_ROUTING_KEY: "users.#"
+  USERS_RABBITMQ_DLX: "channel_service_users_dlx"
+  USERS_RABBITMQ_DLQ: "channel_service_users_dlq"
 ---
 apiVersion: v1
 kind: Service

@@ -82,25 +82,25 @@ rabbit_clients = {
         dlq_durable=True
     ),
     "users": RabbitMQClient(
-        rabbitmq_url=os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/"),
+        rabbitmq_url=os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/"), # !! Se asume que los clientes usan la misma URL !!
         
-        exchange_name="users.events",
+        exchange_name=os.getenv("USERS_RABBITMQ_EXCHANGE", "users.events"),
         exchange_type=aio_pika.ExchangeType.TOPIC,
         exchange_durable=True,
-        
-        queue_name="channel_service_users_queue",
+
+        queue_name=os.getenv("USERS_RABBITMQ_QUEUE", "channel_service_users_queue"),
         queue_durable=True,
-        queue_routing_key="users.#",
+        queue_routing_key=os.getenv("USERS_RABBITMQ_QUEUE_ROUTING_KEY", "users.#"),
         queue_arguments={
-            "x-dead-letter-exchange": "channel_service_users_dlx",
-            "x-dead-letter-routing-key": "channel_service_users_dlq",
+            "x-dead-letter-exchange": os.getenv("USERS_RABBITMQ_DLX", "channel_service_users_dlx"),
+            "x-dead-letter-routing-key": os.getenv("USERS_RABBITMQ_DLQ", "channel_service_users_dlq"),
         },
 
-        dlx_exchange_name="channel_service_users_dlx",
+        dlx_exchange_name=os.getenv("USERS_RABBITMQ_DLX", "channel_service_users_dlx"),
         dlx_exchange_type=aio_pika.ExchangeType.FANOUT,
         dlx_durable=True,
 
-        dlq_queue_name="channel_service_users_dlq",
+        dlq_queue_name=os.getenv("USERS_RABBITMQ_DLQ", "channel_service_users_dlq"),
         dlq_durable=True
     )
 }
