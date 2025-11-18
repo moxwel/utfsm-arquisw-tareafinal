@@ -17,7 +17,8 @@ from ...schemas.channels import Channel, ChannelMember
 from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload, ChannelUserPayload
 from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 import logging
-from ...events.conn import publish_message, publish_message_main, PublishError
+from ...events.publish import publish_message, publish_message_main, PublishError
+from ...events.clients import rabbit_clients
 from ...schemas.http_responses import ErrorResponse
 from datetime import datetime
 
@@ -46,7 +47,7 @@ async def add_user_to_channel(payload: ChannelUserPayload):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario ya en el canal.")
         added_user = next((u for u in channel.users if u.id == payload.user_id), None)
         payload = {"channel_id": channel.id, "user_id": payload.user_id, "added_at": added_user.joined_at if added_user else None}
-        await publish_message_main(payload, "channelService.v1.user.added")
+        await publish_message_main(rabbit_clients["channel"], payload, "channelService.v1.user.added")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID inválido: {str(e)}")
@@ -72,7 +73,7 @@ async def remove_user_from_channel(payload: ChannelUserPayload):
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado, el usuario no está en el canal o es el propietario.")
         payload = {"channel_id": channel.id, "user_id": payload.user_id, "removed_at": datetime.now().timestamp()}
-        await publish_message_main(payload, "channelService.v1.user.removed")
+        await publish_message_main(rabbit_clients["channel"], payload, "channelService.v1.user.removed")
         return channel
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID inválido: {str(e)}")
