@@ -18,7 +18,8 @@ from ...schemas.channels import Channel
 from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload
 from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 import logging
-from ...events.conn import publish_message, publish_message_main, PublishError
+from ...events.publish import publish_message, publish_message_main, PublishError
+from ...events.clients import rabbit_clients
 from ...schemas.http_responses import ErrorResponse
 
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +42,7 @@ async def add_channel(channel_data_payload: ChannelCreatePayload):
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear el canal.")
 
         payload = {"channel_id": channel.id, "name": channel.name, "owner_id": channel.owner_id, "created_at": channel.created_at}
-        await publish_message_main(payload, "channelService.v1.channel.created")
+        await publish_message_main(rabbit_clients["channel"], payload, "channelService.v1.channel.created")
 
         return channel
     except HTTPException as exc:
@@ -59,9 +60,9 @@ async def list_channels(page: int = 1, page_size: int = 10):
     
     try:
         if page_size > page_size_limit:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"El tamaño de página no puede exceder {page_size_limit}.")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"El tamaño de página no puede exceder {page_size_limit}.")
         if page < 1 or page_size < 1:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Los parámetros de paginación deben ser mayores a 0.")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Los parámetros de paginación deben ser mayores a 0.")
 
         offset = (page - 1) * page_size
         channels = db_get_all_channels_paginated(skip=offset, limit=page_size)
@@ -82,7 +83,7 @@ async def read_channel(channel_id: str):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return channel
     except (InvalidId, ValidationError) as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {exc}") from exc
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de canal inválido: {exc}") from exc
     except HTTPException as exc:
         raise exc
     except Exception as exc:
@@ -99,11 +100,11 @@ async def modify_channel(channel_id: str, channel_update_payload: ChannelUpdateP
 
         updated_fields = channel_update_payload.model_dump(exclude_unset=True, exclude_none=True)
         payload = {"channel_id": channel.id, "updated_fields": updated_fields, "updated_at": channel.updated_at}
-        await publish_message_main(payload, "channelService.v1.channel.updated")
+        await publish_message_main(rabbit_clients["channel"], payload, "channelService.v1.channel.updated")
 
         return channel
     except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except PublishError as e:
@@ -134,11 +135,11 @@ async def remove_channel(channel_id: str):
         channel = db_deactivate_channel(channel_id)
         
         payload = {"channel_id": channel_id, "deleted_at": channel.deleted_at}
-        await publish_message_main(payload, "channelService.v1.channel.deleted")
+        await publish_message_main(rabbit_clients["channel"], payload, "channelService.v1.channel.deleted")
         
         return ChannelIDResponse(id=channel_id, status="desactivado")
     except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except PublishError as e:
@@ -168,11 +169,11 @@ async def reactivate_channel(channel_id: str):
         channel = db_reactivate_channel(channel_id)
 
         payload = {"channel_id": channel.id, "reactivated_at": channel.updated_at}
-        await publish_message_main(payload, "channelService.v1.channel.reactivated")
+        await publish_message_main(rabbit_clients["channel"], payload, "channelService.v1.channel.reactivated")
 
         return ChannelIDResponse(id=channel.id)
     except (InvalidId, ValidationError) as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except PublishError as e:
@@ -190,7 +191,7 @@ async def read_channel_basic_info(channel_id: str):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return channel
     except (InvalidId, ValidationError) as e:   
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"ID de canal inválido: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de canal inválido: {str(e)}")
     except HTTPException as exc:
         raise exc
     except Exception as e:
