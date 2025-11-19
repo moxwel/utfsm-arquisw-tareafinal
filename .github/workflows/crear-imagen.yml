@@ -41,6 +41,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Get current date
+      id: date
+      run: echo "date=$(date -u +'%y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
+
     # https://github.com/marketplace/actions/build-and-push-docker-images
     - name: Build and push Docker image
       uses: docker/build-push-action@v6.18.0
@@ -48,6 +52,8 @@ jobs:
         push: True
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          BUILD_DATE=${{ steps.date.outputs.date }}
 
   deploy-in-kubernetes-cluster:
     needs: [ build-and-push-image ]
@@ -72,3 +78,4 @@ jobs:
       run: |
         kubectl apply -f ${{ env.K8S_FOLDER }}/k8s-mongo.yaml
         kubectl apply -f ${{ env.K8S_FOLDER }}/k8s-channel-api.yaml
+        kubectl rollout restart deployment/channel-api-deployment

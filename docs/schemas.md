@@ -12,6 +12,15 @@ Enumeración para el tipo de canal.
   - `public`
   - `private`
 
+### `MemberStatus` (Enum)
+
+Enumeración para el estado de un miembro en un canal.
+
+- **Valores:**
+  - `normal`: Usuario con comportamiento normal
+  - `warning`: Usuario con advertencia
+  - `banned`: Usuario baneado del canal
+
 ### `ChannelMember`
 
 Representa a un miembro de un canal.
@@ -19,6 +28,7 @@ Representa a un miembro de un canal.
 - **Atributos:**
   - `id` (string): El ID del usuario.
   - `joined_at` (float): Timestamp de cuando el usuario se unió.
+  - `status` (`MemberStatus`): Estado del usuario en el canal. Por defecto `normal`.
 
 ### `Channel`
 

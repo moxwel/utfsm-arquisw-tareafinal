@@ -26,7 +26,8 @@ Crea un nuevo canal.
     "users": [
       {
         "id": "string",
-        "joined_at": "float"
+        "joined_at": "float",
+        "status": "normal"
       }
     ],
     "is_active": true,
@@ -163,7 +164,8 @@ Obtiene todos los miembros de un canal.
   [
     {
       "id": "string",
-      "joined_at": "float"
+      "joined_at": "float",
+      "status": "normal"
     }
   ]
   ```

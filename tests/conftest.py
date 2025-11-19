@@ -20,8 +20,8 @@ def mock_infrastructure(monkeypatch):
     async def fake_close_rabbitmq_connection():
         return None
 
-    monkeypatch.setattr(main_module, "connect_to_rabbitmq", fake_connect_to_rabbitmq)
-    monkeypatch.setattr(main_module, "close_rabbitmq_connection", fake_close_rabbitmq_connection)
+    monkeypatch.setattr(main_module, "connect_to_rabbitmq_all", fake_connect_to_rabbitmq)
+    monkeypatch.setattr(main_module, "close_rabbitmq_connection_all", fake_close_rabbitmq_connection)
 
     async def fake_publish_message_main(*args, **kwargs):
         return None

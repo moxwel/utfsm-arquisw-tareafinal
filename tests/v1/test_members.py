@@ -8,10 +8,10 @@ from app.schemas.responses import ChannelBasicInfoResponse
 from app.routers.v1 import members as members_router
 
 
-def make_fake_member(user_id: str, joined_at: float | None = None) -> ChannelMember:
+def make_fake_member(user_id: str, joined_at: float | None = None, status: str = "normal") -> ChannelMember:
     if joined_at is None:
         joined_at = time.time()
-    return ChannelMember.model_validate({"id": user_id, "joined_at": joined_at})
+    return ChannelMember.model_validate({"id": user_id, "joined_at": joined_at, "status": status})
 
 
 def make_fake_channel(
@@ -84,7 +84,6 @@ def test_add_user_to_channel_success(client: TestClient, monkeypatch):
     assert data["_id"] == "chan-1"
     assert data["owner_id"] == "owner-123"
 
-
 def test_add_user_to_channel_not_found_or_already_member(client: TestClient, monkeypatch):
     def fake_db_add_user_to_channel(channel_id: str, user_id: str):
         return None
@@ -120,7 +119,6 @@ def test_remove_user_from_channel_success(client: TestClient, monkeypatch):
     if response.status_code == 200:
         data = response.json()
         assert data["_id"] == "chan-1"
-
 
 def test_remove_user_from_channel_not_found(client: TestClient, monkeypatch):
     def fake_db_remove_user_from_channel(channel_id: str, user_id: str):
@@ -234,3 +232,48 @@ def test_list_members_by_channel_success(client: TestClient, monkeypatch):
 def test_list_members_by_channel_invalid_page_size(client: TestClient):
     response = client.get("/v1/members/channel/chan-1?page=1&page_size=1000")
     assert response.status_code == 422
+
+
+# -------------------- Pruebas de user_count -------------------- #
+
+def test_user_count_reflects_multiple_additions(client: TestClient, monkeypatch):
+    """Verifica que múltiples adiciones de usuarios se reflejen en user_count."""
+    # Simular añadir usuarios uno por uno y verificar que el conteo aumenta
+    
+    # Estado 1: 1 usuario (owner)
+    members_1 = [make_fake_member("owner-123")]
+    channel_1 = make_fake_channel(channel_id="chan-1", users=members_1)
+    
+    # Estado 2: 2 usuarios
+    members_2 = members_1 + [make_fake_member("user-1")]
+    channel_2 = make_fake_channel(channel_id="chan-1", users=members_2)
+    
+    # Estado 3: 3 usuarios
+    members_3 = members_2 + [make_fake_member("user-2")]
+    channel_3 = make_fake_channel(channel_id="chan-1", users=members_3)
+    
+    call_count = {"count": 0}
+    
+    def fake_db_add_user_to_channel(channel_id: str, user_id: str):
+        call_count["count"] += 1
+        if call_count["count"] == 1:
+            return channel_2
+        elif call_count["count"] == 2:
+            return channel_3
+        return None
+
+    monkeypatch.setattr(members_router, "db_add_user_to_channel", fake_db_add_user_to_channel)
+
+    # Primera adición
+    body = {"channel_id": "chan-1", "user_id": "user-1"}
+    response = client.post("/v1/members/", json=body)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["users"]) == 2
+    
+    # Segunda adición
+    body = {"channel_id": "chan-1", "user_id": "user-2"}
+    response = client.post("/v1/members/", json=body)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["users"]) == 3
