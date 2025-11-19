@@ -7,9 +7,15 @@ class ChannelType(str, Enum):
     PUBLIC = "public"
     PRIVATE = "private"
 
+class MemberStatus(str, Enum):
+    NORMAL = "normal"
+    WARNING = "warning"
+    BANNED = "banned"
+
 class ChannelMember(BaseModel):
     id: str
     joined_at: float
+    status: MemberStatus = MemberStatus.NORMAL
 
 class Channel(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
@@ -33,9 +39,9 @@ class Channel(BaseModel):
                 "name": "general",
                 "owner_id": "owner123",
                 "users": [
-                    {"id": "user1", "joined_at": 1760833769.259725},
-                    {"id": "user2", "joined_at": 1760833769.259725},
-                    {"id": "owner123", "joined_at": 1760833769.259725}
+                    {"id": "user1", "joined_at": 1760833769.259725, "status": "normal"},
+                    {"id": "user2", "joined_at": 1760833769.259725, "status": "warning"},
+                    {"id": "owner123", "joined_at": 1760833769.259725, "status": "normal"}
                 ],
                 "is_active": True,
                 "channel_type": "public",

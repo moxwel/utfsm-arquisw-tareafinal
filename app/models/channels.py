@@ -7,6 +7,7 @@ from datetime import datetime
 class ChannelMemberDocument(EmbeddedDocument):
     id = StringField(required=True)
     joined_at = FloatField(required=True)
+    status = StringField(required=True, choices=["normal", "warning", "banned"], default="normal")
 
 class ChannelDocument(Document):
     meta = {"collection": "channels", "index_background": True}
@@ -26,7 +27,7 @@ def _document_to_channel(document: ChannelDocument) -> Channel | None:
         "_id": str(document.pk),
         "owner_id": document.owner_id,
         "name": document.name,
-        "users": [{"id": u.id, "joined_at": u.joined_at} for u in document.users],
+        "users": [{"id": u.id, "joined_at": u.joined_at, "status": u.status} for u in document.users],
         "channel_type": document.channel_type,
         "is_active": document.is_active,
         "created_at": document.created_at,
