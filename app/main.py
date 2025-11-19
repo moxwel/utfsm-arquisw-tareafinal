@@ -7,6 +7,7 @@ from .events.listeners.users import create_user_listeners
 from .events.listeners.moderation import create_moderation_listeners
 import logging
 import socket
+import os
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -25,7 +26,18 @@ async def lifespan(app: FastAPI):
     close_mongo_connection()
     await close_rabbitmq_connection_all()
 
-app = FastAPI(title="Servicio de Canales", version="1.0.0", lifespan=lifespan)
+descripcion_texto = f"""API para la gestión de canales.\n
+Repositorio: https://github.com/moxwel/utfsm-arquisw-tareafinal/\n
+Fecha de compilación: {os.getenv("BUILD_DATE", "unknown")}\n
+Hostname: {socket.gethostname()}
+"""
+
+app = FastAPI(
+    title="Servicio de Canales",
+    version="1.0.0",
+    lifespan=lifespan,
+    description=descripcion_texto
+)
 
 app.include_router(channels.router)
 app.include_router(members.router)
@@ -33,7 +45,8 @@ app.include_router(members.router)
 @app.get("/")
 async def root():
     hostname = socket.gethostname()
-    return {"message": "Hello World", "hostname": hostname}
+    build_date = os.getenv("BUILD_DATE", "unknown")
+    return {"message": "Hello World", "hostname": hostname, "build_date": build_date}
 
 @app.get("/health")
 async def health_check():
