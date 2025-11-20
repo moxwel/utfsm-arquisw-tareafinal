@@ -38,6 +38,27 @@ Crea un nuevo canal.
   }
   ```
 
+### `GET /v1/channels/`
+
+Obtiene una lista paginada de información básica de todos los canales.
+
+- **Parámetros de Query:**
+  - `page` (int, opcional): Número de página (default: 1, mínimo: 1).
+  - `page_size` (int, opcional): Cantidad de elementos por página (default: 10, mínimo: 1, máximo: 100).
+- **Respuesta Exitosa (200, `list[ChannelBasicInfoResponse]`):**
+  ```json
+  [
+    {
+      "id": "string",
+      "name": "string",
+      "owner_id": "string",
+      "channel_type": "public",
+      "created_at": "float",
+      "user_count": 5
+    }
+  ]
+  ```
+
 ### `GET /v1/channels/{channel_id}`
 
 Obtiene un canal por su ID.
@@ -70,11 +91,11 @@ Desactiva un canal.
 
 - **Parámetros de Ruta:**
   - `channel_id` (string): El ID del canal.
-- **Respuesta Exitosa (200, `ChannelIDResponse`):**
+- **Respuesta Exitosa (200, `ChannelStatusResponse`):**
   ```json
   {
     "id": "string",
-    "status": "desactivado"
+    "is_active": false
   }
   ```
 
@@ -84,8 +105,13 @@ Reactiva un canal.
 
 - **Parámetros de Ruta:**
   - `channel_id` (string): El ID del canal.
-- **Respuesta Exitosa (200, `ChannelIDResponse`):**
-  - Devuelve el ID del canal reactivado.
+- **Respuesta Exitosa (200, `ChannelStatusResponse`):**
+  ```json
+  {
+    "id": "string",
+    "is_active": true
+  }
+  ```
 
 ### `GET /v1/channels/{channel_id}/basic`
 
@@ -100,7 +126,22 @@ Obtiene información básica de un canal.
     "name": "string",
     "owner_id": "string",
     "channel_type": "public",
-    "created_at": "float"
+    "created_at": "float",
+    "user_count": 5
+  }
+  ```
+
+### `GET /v1/channels/{channel_id}/status`
+
+Verifica si un canal está activo.
+
+- **Parámetros de Ruta:**
+  - `channel_id` (string): El ID del canal.
+- **Respuesta Exitosa (200, `ChannelStatusResponse`):**
+  ```json
+  {
+    "id": "string",
+    "is_active": true
   }
   ```
 

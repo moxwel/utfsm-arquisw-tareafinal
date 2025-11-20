@@ -50,7 +50,7 @@ metadata:
   labels:
     app: channel-api
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: channel-api
@@ -116,6 +116,6 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: channel-api-deployment
-  minReplicas: 3
-  maxReplicas: 10
+  minReplicas: 1
+  maxReplicas: 2
   targetCPUUtilizationPercentage: 50

@@ -95,9 +95,7 @@ Todos los mensajes incluyen un campo llamado `type` en el payload que indica el 
 
 ## Mensajes Consumidos
 
-El servicio escucha eventos provenientes de otros dominios (actualmente el dominio de Usuarios).
-
-### Eventos de Usuarios (`.#`)
+### Eventos de Usuarios
 
 El servicio se suscribe al exchange de usuarios para mantener la consistencia de datos (por ejemplo, si un usuario actualiza su perfil o es eliminado).
 
@@ -107,3 +105,61 @@ El servicio se suscribe al exchange de usuarios para mantener la consistencia de
 
 **Procesamiento:**
 Actualmente, los mensajes son recibidos y logueados por el callback en [`app/events/callbacks/users.py`](../app/events/callbacks/users.py). La lógica específica de negocio está pendiente de implementación.
+
+### Eventos de Moderación
+
+El servicio se suscribe al exchange de moderación para procesar acciones de moderación sobre usuarios en canales.
+
+- **Exchange:** `moderation_events` (configurado vía `MODERATION_RABBITMQ_EXCHANGE`)
+- **Cola:** `channel_service_moderation_queue` (configurado vía `MODERATION_RABBITMQ_QUEUE`)
+- **Routing Key:** `moderation.#` (Escucha todos los eventos que comiencen con `moderation.`)
+
+**Procesamiento:**
+Los mensajes son procesados por el callback en [`app/events/callbacks/moderation.py`](../app/events/callbacks/moderation.py).
+
+Dependiendo del `event_type`, se realizan diferentes acciones:
+
+#### `moderation.warning`
+
+- **Descripción:** Marca a un usuario con estado de advertencia en un canal específico.
+- **Payload minimo esperado:**
+  ```json
+  {
+    "event_type": "moderation.warning",
+    "data": {
+      "user_id": "string",
+      "channel_id": "string"
+    }
+  }
+  ```
+- **Acción:** Cambia el estado `status` del usuario en el canal a `warning`.
+
+#### `moderation.user_banned`
+
+- **Descripción:** Banea a un usuario de un canal específico.
+- **Payload minimo esperado:**
+  ```json
+  {
+    "event_type": "moderation.user_banned",
+    "data": {
+      "user_id": "string",
+      "channel_id": "string"
+    }
+  }
+  ```
+- **Acción:** Cambia el estado `status` del usuario en el canal a `banned`.
+
+#### `moderation.user_unbanned`
+
+- **Descripción:** Desbanea a un usuario de un canal específico, restaurándolo a estado normal.
+- **Payload minimo esperado:**
+  ```json
+  {
+    "event_type": "moderation.user_unbanned",
+    "data": {
+      "user_id": "string",
+      "channel_id": "string"
+    }
+  }
+  ```
+- **Acción:** Cambia el estado `status` del usuario en el canal a `normal`.
