@@ -55,6 +55,9 @@ class RabbitMQClient:
         self.main_queue: Optional[aio_pika.Queue] = None
         self.dlx_exchange: Optional[aio_pika.Exchange] = None
         self.dlq_queue: Optional[aio_pika.Queue] = None
+        
+        # Lista de consumidores (tag, queue)
+        self.active_consumers: list[tuple[str, aio_pika.Queue]] = []
 
 # Diccionario de clientes RabbitMQ
 # TODO: Si hay que agregar más clientes, hacerlo aquí!!!
