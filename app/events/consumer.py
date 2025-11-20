@@ -54,6 +54,8 @@ async def start_consumer_main(client, callback: Callable, prefetch_count: int = 
         final_callback = callback if manual_ack else _create_auto_ack_wrapper(callback)
         
         consumer_tag = await client.main_queue.consume(final_callback, no_ack=False)
+        client.active_consumers.append((consumer_tag, client.main_queue))
+        
         logger.info(f"Consumidor iniciado en la cola principal '{client.main_queue.name}' (prefetch_count={prefetch_count}, manual_ack={manual_ack})")
         return consumer_tag
     except Exception as e:
@@ -82,6 +84,8 @@ async def start_consumer(client, callback: Callable, queue_name: str, prefetch_c
         final_callback = callback if manual_ack else _create_auto_ack_wrapper(callback)
         
         consumer_tag = await queue.consume(final_callback, no_ack=False)
+        client.active_consumers.append((consumer_tag, queue))
+        
         logger.info(f"Consumidor iniciado en la cola '{queue_name}' (prefetch_count={prefetch_count}, manual_ack={manual_ack})")
         return consumer_tag
     except aio_pika.exceptions.ChannelClosed as e:

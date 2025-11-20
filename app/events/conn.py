@@ -92,6 +92,15 @@ async def connect_to_rabbitmq_all():
 async def close_rabbitmq_connection(client: RabbitMQClient):
     """Cierra la conexión con RabbitMQ para un cliente específico."""
     if client.channel:
+        for tag, queue in client.active_consumers:
+            try:
+                await queue.cancel(consumer_tag=tag)
+                logger.info(f"Consumidor con tag '{tag}' en cola '{queue.name}' cancelado.")
+            except Exception as e:
+                logger.error(f"Error al cancelar consumidor con tag '{tag}' en cola '{queue.name}': {e}")
+        
+        client.active_consumers.clear()
+
         await client.channel.close()
     if client.connection:
         await client.connection.close()
@@ -104,6 +113,3 @@ async def close_rabbitmq_connection_all():
         logger.info(f"Cerrando cliente '{client_name}'...")
         await close_rabbitmq_connection(client)
     logger.info("Todas las conexiones RabbitMQ cerradas.")
-
-# Alias para acceso externo
-rabbitmq_clients = rabbit_clients
