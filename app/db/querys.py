@@ -279,3 +279,13 @@ def db_is_channel_active(channel_id: str) -> bool | None:
     except Exception as e:
         logger.exception("Error al verificar si el canal está activo")
         return None
+
+def db_check_user_exists_in_channel(channel_id: str, user_id: str) -> bool:
+    if not channel_id or not user_id:
+        return False
+    try:
+        query = Q(id=channel_id) & Q(users__id=user_id) & Q(is_active=True)
+        exists = ChannelDocument.objects(query).first() is not None
+        return exists
+    except ValidationError:
+        return False
