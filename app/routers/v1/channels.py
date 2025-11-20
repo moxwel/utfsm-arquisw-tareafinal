@@ -7,7 +7,7 @@ from ...schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload
 from ...schemas.responses import ChannelIDResponse, ChannelBasicInfoResponse
 from ...schemas.http_responses import ErrorResponse
 from ...events.publish import PublishError
-from ...controllers import channels
+from ...controllers import channels as channel_controller
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/v1/channels", tags=["channels"], responses=ROUTER_ER
 async def add_channel(channel_data_payload: ChannelCreatePayload):
     """Crea un nuevo canal y lo guarda en MongoDB."""
     try:
-        channel = await channels.create_channel(channel_data_payload)
+        channel = await channel_controller.create_channel(channel_data_payload)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear el canal.")
         return channel
@@ -45,7 +45,7 @@ async def list_channels(page: int = 1, page_size: int = 10):
         if page < 1 or page_size < 1:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Los parámetros de paginación deben ser mayores a 0.")
         
-        return channels.list_channels(page, page_size)
+        return channel_controller.list_channels(page, page_size)
     except HTTPException:
         raise
     except Exception as e:
@@ -56,7 +56,7 @@ async def list_channels(page: int = 1, page_size: int = 10):
 async def read_channel(channel_id: str):
     """Obtiene un canal existente por su ID."""
     try:
-        channel = channels.get_channel(channel_id)
+        channel = channel_controller.get_channel(channel_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return channel
@@ -72,7 +72,7 @@ async def read_channel(channel_id: str):
 async def modify_channel(channel_id: str, channel_update_payload: ChannelUpdatePayload):
     """Actualiza un canal existente en MongoDB."""
     try:
-        channel = await channels.update_channel(channel_id, channel_update_payload)
+        channel = await channel_controller.update_channel(channel_id, channel_update_payload)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o sin datos para actualizar.")
         return channel
@@ -97,7 +97,7 @@ async def modify_channel(channel_id: str, channel_update_payload: ChannelUpdateP
 async def remove_channel(channel_id: str):
     """Desactiva un canal en MongoDB (no lo elimina físicamente)."""
     try:
-        channel_before, channel_after = await channels.delete_channel(channel_id)
+        channel_before, channel_after = await channel_controller.delete_channel(channel_id)
         
         if channel_before is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
@@ -126,7 +126,7 @@ async def remove_channel(channel_id: str):
 async def reactivate_channel(channel_id: str):
     """Reactiva un canal desactivado en MongoDB."""
     try:
-        channel, was_already_active = await channels.reactivate_channel(channel_id)
+        channel, was_already_active = await channel_controller.reactivate_channel(channel_id)
         
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
@@ -149,7 +149,7 @@ async def reactivate_channel(channel_id: str):
 async def read_channel_basic_info(channel_id: str):
     """Obtiene información básica de un canal específico desde MongoDB."""
     try:
-        channel = channels.get_channel_basic_info(channel_id)
+        channel = channel_controller.get_channel_basic_info(channel_id)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return channel
@@ -164,7 +164,7 @@ async def read_channel_basic_info(channel_id: str):
 async def check_channel_status(channel_id: str):
     """Verifica si un canal está activo en MongoDB."""
     try:
-        is_active = channels.is_channel_active(channel_id)
+        is_active = channel_controller.is_channel_active(channel_id)
         if is_active is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return is_active

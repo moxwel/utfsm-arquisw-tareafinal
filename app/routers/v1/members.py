@@ -7,7 +7,7 @@ from ...schemas.payloads import ChannelUserPayload
 from ...schemas.responses import ChannelBasicInfoResponse
 from ...schemas.http_responses import ErrorResponse
 from ...events.publish import PublishError
-from ...controllers import members
+from ...controllers import members as members_controller
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/v1/members", tags=["members"], responses=ROUTER_ERRO
 async def add_user_to_channel(payload: ChannelUserPayload):
     """Agrega un usuario a un canal existente en MongoDB."""
     try:
-        channel = await members.add_user_to_channel(payload)
+        channel = await members_controller.add_user_to_channel(payload)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado o usuario ya en el canal.")
         return channel
@@ -53,7 +53,7 @@ async def add_user_to_channel(payload: ChannelUserPayload):
 async def remove_user_from_channel(payload: ChannelUserPayload):
     """Elimina un usuario de un canal existente en MongoDB."""
     try:
-        channel = await members.remove_user_from_channel(payload)
+        channel = await members_controller.remove_user_from_channel(payload)
         if channel is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado, el usuario no está en el canal o es el propietario.")
         return channel
@@ -71,7 +71,7 @@ async def remove_user_from_channel(payload: ChannelUserPayload):
 async def read_channels_by_member(user_id: str):
     """Obtiene todos los canales en los que un usuario es miembro desde MongoDB."""
     try:
-        return members.get_channels_by_member(user_id)
+        return members_controller.get_channels_by_member(user_id)
     except (InvalidId, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de usuario inválido: {str(e)}")
     except Exception as e:
@@ -81,7 +81,7 @@ async def read_channels_by_member(user_id: str):
 async def read_channels_by_owner(owner_id: str):
     """Obtiene todos los canales asociados a un propietario específico desde MongoDB."""
     try:
-        return members.get_channels_by_owner(owner_id)
+        return members_controller.get_channels_by_owner(owner_id)
     except (InvalidId, ValidationError):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="ID de servidor inválido.")
     except Exception as e:
@@ -103,7 +103,7 @@ async def read_channel_member_ids(channel_id: str, page: int = 1, page_size: int
         if page < 1 or page_size < 1:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Los parámetros de paginación deben ser mayores a 0.")
         
-        member_ids = members.get_channel_member_ids(channel_id, page, page_size)
+        member_ids = members_controller.get
         if member_ids is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return member_ids
