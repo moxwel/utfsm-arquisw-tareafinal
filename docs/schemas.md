@@ -101,3 +101,11 @@ Esquema para respuestas de error.
 
 - **Atributos:**
   - `detail` (string): Mensaje de error detallado.
+
+### `ChannelStatusResponse`
+
+Esquema para la respuesta de estado de un canal.
+
+- **Atributos:**
+  - `id` (string): ID del canal.
+  - `is_active` (boolean): Indica si el canal está activo o no.

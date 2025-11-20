@@ -53,7 +53,8 @@ Obtiene una lista paginada de información básica de todos los canales.
       "name": "string",
       "owner_id": "string",
       "channel_type": "public",
-      "created_at": "float"
+      "created_at": "float",
+      "user_count": 5
     }
   ]
   ```
@@ -90,11 +91,11 @@ Desactiva un canal.
 
 - **Parámetros de Ruta:**
   - `channel_id` (string): El ID del canal.
-- **Respuesta Exitosa (200, `ChannelIDResponse`):**
+- **Respuesta Exitosa (200, `ChannelStatusResponse`):**
   ```json
   {
     "id": "string",
-    "status": "desactivado"
+    "is_active": false
   }
   ```
 
@@ -104,8 +105,13 @@ Reactiva un canal.
 
 - **Parámetros de Ruta:**
   - `channel_id` (string): El ID del canal.
-- **Respuesta Exitosa (200, `ChannelIDResponse`):**
-  - Devuelve el ID del canal reactivado.
+- **Respuesta Exitosa (200, `ChannelStatusResponse`):**
+  ```json
+  {
+    "id": "string",
+    "is_active": true
+  }
+  ```
 
 ### `GET /v1/channels/{channel_id}/basic`
 
@@ -120,7 +126,8 @@ Obtiene información básica de un canal.
     "name": "string",
     "owner_id": "string",
     "channel_type": "public",
-    "created_at": "float"
+    "created_at": "float",
+    "user_count": 5
   }
   ```
 
@@ -130,8 +137,13 @@ Verifica si un canal está activo.
 
 - **Parámetros de Ruta:**
   - `channel_id` (string): El ID del canal.
-- **Respuesta Exitosa (200, `bool`):**
-  - Devuelve `true` si el canal está activo, `false` si está desactivado.
+- **Respuesta Exitosa (200, `ChannelStatusResponse`):**
+  ```json
+  {
+    "id": "string",
+    "is_active": true
+  }
+  ```
 
 ## Miembros
 

@@ -35,3 +35,16 @@ class ChannelBasicInfoResponse(BaseModel):
             }
         }
     )
+
+class ChannelStatusResponse(BaseModel):
+    id: str
+    is_active: bool
+
+    model_config = ConfigDict(
+        json_schema_extra = {
+            "example": {
+                "id": "60f7c0c2b4d1c8b4f8e4d2a1",
+                "is_active": True
+            }
+        }
+    )
