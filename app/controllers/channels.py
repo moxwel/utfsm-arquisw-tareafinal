@@ -5,7 +5,8 @@ from ..db.querys import (
     db_deactivate_channel,
     db_reactivate_channel,
     db_get_basic_channel_info,
-    db_get_all_channels_paginated
+    db_get_all_channels_paginated,
+    db_is_channel_active
 )
 from ..schemas.channels import Channel
 from ..schemas.payloads import ChannelCreatePayload, ChannelUpdatePayload
@@ -95,3 +96,7 @@ async def reactivate_channel(channel_id: str) -> tuple[Channel | None, bool]:
 def get_channel_basic_info(channel_id: str) -> ChannelBasicInfoResponse | None:
     """Obtiene información básica de un canal específico desde MongoDB."""
     return db_get_basic_channel_info(channel_id)
+
+def is_channel_active(channel_id: str) -> bool | None:
+    """Verifica si un canal está activo."""
+    return db_is_channel_active(channel_id)

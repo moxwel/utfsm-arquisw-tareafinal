@@ -159,3 +159,14 @@ async def read_channel_basic_info(channel_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error interno del servidor: {str(e)}")
+
+@router.get("/{channel_id}/status", response_model=bool)
+async def check_channel_status(channel_id: str):
+    """Verifica si un canal está activo en MongoDB."""
+    try:
+        is_active = channels.is_channel_active(channel_id)
+        if is_active is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
+        return is_active
+    except (InvalidId, ValidationError) as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"ID de canal inválido: {str(e)}")

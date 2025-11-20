@@ -266,3 +266,16 @@ def db_change_status(channel_id: str, user_id: str, new_status: str) -> Channel 
     except ValidationError:
         return None
     return _document_to_channel(document)
+
+def db_is_channel_active(channel_id: str) -> bool | None:
+    if not channel_id:
+        return None
+    try:
+        query = Q(id=channel_id)
+        document = ChannelDocument.objects.get(query)
+        return document.is_active
+    except (DoesNotExist, ValidationError):
+        return None
+    except Exception as e:
+        logger.exception("Error al verificar si el canal está activo")
+        return None
