@@ -103,7 +103,7 @@ async def read_channel_member_ids(channel_id: str, page: int = 1, page_size: int
         if page < 1 or page_size < 1:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Los parámetros de paginación deben ser mayores a 0.")
         
-        member_ids = members_controller.get
+        member_ids = members_controller.get_channel_member_ids(channel_id, page, page_size)
         if member_ids is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canal no encontrado.")
         return member_ids
