@@ -75,7 +75,7 @@ El ciclo de vida se gestiona en [`app/main.py`](../app/main.py):
 
 1. Al iniciar la app (`lifespan` startup):
    - Se llama a `connect_to_rabbitmq_all()` para establecer conexiones y declarar topología.
-   - Se llama a `create_user_listeners(rabbitmq_clients)` para empezar a escuchar eventos de usuarios.
+   - Se llama a `create_user_listeners(rabbit_clients)` para empezar a escuchar eventos de usuarios.
 
 2. Al detener la app (`lifespan` shutdown):
    - Se llama a `disconnect_from_rabbitmq_all()` para cerrar canales y conexiones limpiamente.
