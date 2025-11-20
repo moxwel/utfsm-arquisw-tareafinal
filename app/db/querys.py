@@ -47,11 +47,11 @@ def db_get_all_channels_paginated(skip: int = 0, limit: int = 100) -> list[Chann
         logger.exception("Error al obtener canales paginados")
         return []
 
-def db_get_channel_by_id(channel_id: str) -> Channel | None:
+def db_get_channel_by_id(channel_id: str, include_inactive: bool = False) -> Channel | None:
     if not channel_id:
         return None
     try:
-        query = Q(id=channel_id) & Q(is_active=True)
+        query = Q(id=channel_id) if include_inactive else Q(id=channel_id) & Q(is_active=True)
         document = ChannelDocument.objects.get(query)
     except (DoesNotExist, ValidationError):
         return None

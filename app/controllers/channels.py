@@ -46,7 +46,7 @@ async def delete_channel(channel_id: str) -> tuple[Channel | None, Channel | Non
     Returns:
         tuple: (channel_before_delete, channel_after_delete)
     """
-    channel_before = querys.db_get_channel_by_id(channel_id)
+    channel_before = querys.db_get_channel_by_id(channel_id, include_inactive=True)
     
     if not channel_before:
         return None, None
@@ -68,7 +68,7 @@ async def reactivate_channel(channel_id: str) -> tuple[Channel | None, bool]:
     Returns:
         tuple: (channel, was_already_active)
     """
-    channel = querys.db_get_channel_by_id(channel_id)
+    channel = querys.db_get_channel_by_id(channel_id, include_inactive=True)
     
     if not channel:
         return None, False
