@@ -78,3 +78,4 @@ jobs:
       run: |
         kubectl apply -f ${{ env.K8S_FOLDER }}/k8s-mongo.yaml
         kubectl apply -f ${{ env.K8S_FOLDER }}/k8s-channel-api.yaml
+        kubectl rollout restart deployment/channel-api-deployment
