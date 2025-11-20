@@ -29,7 +29,14 @@ def get_channel(channel_id: str) -> Channel | None:
 
 
 async def update_channel(channel_id: str, channel_update_payload: ChannelUpdatePayload) -> Channel | None:
-    """Actualiza un canal existente en MongoDB."""
+    """Actualiza un canal existente en MongoDB. Para cambiar el owner_id, el nuevo owner debe ser miembro del canal."""
+    
+    new_owner_id = channel_update_payload.owner_id
+    if new_owner_id is not None:
+        new_owner_is_member = querys.db_check_user_exists_in_channel(channel_id, new_owner_id)
+        if not new_owner_is_member:
+            raise ValueError(f"El nuevo owner_id '{new_owner_id}' no es miembro del canal.")
+    
     channel = querys.db_update_channel(channel_id, channel_update_payload)
     
     if channel:
