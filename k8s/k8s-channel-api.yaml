@@ -50,14 +50,21 @@ metadata:
   labels:
     app: channel-api
 spec:
+  replicas: 3
   selector:
     matchLabels:
       app: channel-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         app: channel-api
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
         - name: api
           image: ghcr.io/moxwel/utfsm-arquisw-tareafinal:latest
@@ -74,6 +81,15 @@ spec:
             initialDelaySeconds: 10 # Equivalente a start_period
             periodSeconds: 5
             failureThreshold: 12 # 10s + (12 * 5s) = 70s para arrancar
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /health
