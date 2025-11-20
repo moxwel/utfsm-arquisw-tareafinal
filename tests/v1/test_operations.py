@@ -5,9 +5,8 @@ from fastapi.testclient import TestClient
 
 from app.schemas.channels import Channel, ChannelMember
 from app.schemas.responses import ChannelBasicInfoResponse
-from app.routers.v1 import members as members_router
-from app.routers.v1 import channels as channels_router
-from app.db import querys
+from app.controllers import members as members_controller
+from app.controllers import channels as channels_controller
 
 
 def make_fake_member(user_id: str, joined_at: float | None = None, status: str = "normal") -> ChannelMember:
@@ -77,18 +76,18 @@ def test_add_user_increases_user_count(client: TestClient, monkeypatch):
         users=updated_members,
     )
 
-    def fake_db_add_user_to_channel(channel_id: str, user_id: str):
+    async def fake_add_user_to_channel(payload):
         return fake_channel
 
-    def fake_db_get_basic_channel_info(channel_id: str):
+    def fake_get_channel_basic_info(channel_id: str):
         # Simular la info básica con el conteo actualizado
         return make_fake_basic_info(
             channel_id="chan-1",
             user_count=len(updated_members)
         )
 
-    monkeypatch.setattr(members_router, "db_add_user_to_channel", fake_db_add_user_to_channel)
-    monkeypatch.setattr(channels_router, "db_get_basic_channel_info", fake_db_get_basic_channel_info)
+    monkeypatch.setattr(members_controller, "add_user_to_channel", fake_add_user_to_channel)
+    monkeypatch.setattr(channels_controller, "get_channel_basic_info", fake_get_channel_basic_info)
 
     # Añadir el tercer usuario
     body = {"channel_id": "chan-1", "user_id": "user-3"}
@@ -123,18 +122,18 @@ def test_remove_user_decreases_user_count(client: TestClient, monkeypatch):
         users=updated_members,
     )
 
-    def fake_db_remove_user_from_channel(channel_id: str, user_id: str):
+    async def fake_remove_user_from_channel(payload):
         return fake_channel
 
-    def fake_db_get_basic_channel_info(channel_id: str):
+    def fake_get_channel_basic_info(channel_id: str):
         # Simular la info básica con el conteo actualizado
         return make_fake_basic_info(
             channel_id="chan-1",
             user_count=len(updated_members)
         )
 
-    monkeypatch.setattr(members_router, "db_remove_user_from_channel", fake_db_remove_user_from_channel)
-    monkeypatch.setattr(channels_router, "db_get_basic_channel_info", fake_db_get_basic_channel_info)
+    monkeypatch.setattr(members_controller, "remove_user_from_channel", fake_remove_user_from_channel)
+    monkeypatch.setattr(channels_controller, "get_channel_basic_info", fake_get_channel_basic_info)
 
     # Eliminar el tercer usuario
     body = {"channel_id": "chan-1", "user_id": "user-3"}
@@ -169,18 +168,18 @@ def test_user_count_after_removing_all_members(client: TestClient, monkeypatch):
         users=final_members,
     )
 
-    def fake_db_remove_user_from_channel(channel_id: str, user_id: str):
+    async def fake_remove_user_from_channel(payload):
         return fake_channel
 
-    def fake_db_get_basic_channel_info(channel_id: str):
+    def fake_get_channel_basic_info(channel_id: str):
         return make_fake_basic_info(
             channel_id="chan-1",
             owner_id="owner-123",
             user_count=len(final_members)
         )
 
-    monkeypatch.setattr(members_router, "db_remove_user_from_channel", fake_db_remove_user_from_channel)
-    monkeypatch.setattr(channels_router, "db_get_basic_channel_info", fake_db_get_basic_channel_info)
+    monkeypatch.setattr(members_controller, "remove_user_from_channel", fake_remove_user_from_channel)
+    monkeypatch.setattr(channels_controller, "get_channel_basic_info", fake_get_channel_basic_info)
 
     # Eliminar el último miembro no-owner
     body = {"channel_id": "chan-1", "user_id": "user-1"}
@@ -208,18 +207,14 @@ def test_user_count_consistency_across_endpoints(client: TestClient, monkeypatch
         user_count=5
     )
 
-    def fake_db_get_channel_by_id(channel_id: str):
-        return fake_channel
-
-    def fake_db_get_basic_channel_info(channel_id: str):
+    def fake_get_channel_basic_info(channel_id: str):
         return fake_basic_info
     
-    def fake_db_get_channels_by_member_id(user_id: str):
+    def fake_get_channels_by_member(user_id: str):
         return [fake_basic_info]
 
-    monkeypatch.setattr(members_router, "db_get_channel_by_id", fake_db_get_channel_by_id)
-    monkeypatch.setattr(members_router, "db_get_channels_by_member_id", fake_db_get_channels_by_member_id)
-    monkeypatch.setattr(channels_router, "db_get_basic_channel_info", fake_db_get_basic_channel_info)
+    monkeypatch.setattr(members_controller, "get_channels_by_member", fake_get_channels_by_member)
+    monkeypatch.setattr(channels_controller, "get_channel_basic_info", fake_get_channel_basic_info)
 
     # Verificar a través del endpoint de canales por miembro
     response = client.get("/v1/members/user-1")
