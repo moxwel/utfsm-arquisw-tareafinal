@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.schemas.channels import Channel, ChannelMember
 from app.schemas.responses import ChannelBasicInfoResponse
-from app.routers.v1 import members as members_router
+from app.controllers import members as members_controller
 
 
 def make_fake_member(user_id: str, joined_at: float | None = None, status: str = "normal") -> ChannelMember:
@@ -68,12 +68,12 @@ def test_add_user_to_channel_success(client: TestClient, monkeypatch):
         users=[member],
     )
 
-    def fake_db_add_user_to_channel(channel_id: str, user_id: str):
-        assert channel_id == "chan-1"
-        assert user_id == "user-123"
+    async def fake_add_user_to_channel(payload):
+        assert payload.channel_id == "chan-1"
+        assert payload.user_id == "user-123"
         return fake_channel
 
-    monkeypatch.setattr(members_router, "db_add_user_to_channel", fake_db_add_user_to_channel)
+    monkeypatch.setattr(members_controller, "add_user_to_channel", fake_add_user_to_channel)
 
     body = {"channel_id": "chan-1", "user_id": "user-123"}
 
@@ -85,10 +85,10 @@ def test_add_user_to_channel_success(client: TestClient, monkeypatch):
     assert data["owner_id"] == "owner-123"
 
 def test_add_user_to_channel_not_found_or_already_member(client: TestClient, monkeypatch):
-    def fake_db_add_user_to_channel(channel_id: str, user_id: str):
+    async def fake_add_user_to_channel(payload):
         return None
 
-    monkeypatch.setattr(members_router, "db_add_user_to_channel", fake_db_add_user_to_channel)
+    monkeypatch.setattr(members_controller, "add_user_to_channel", fake_add_user_to_channel)
 
     body = {"channel_id": "chan-1", "user_id": "user-123"}
     response = client.post("/v1/members/", json=body)
@@ -104,12 +104,12 @@ def test_remove_user_from_channel_success(client: TestClient, monkeypatch):
         users=[member],
     )
 
-    def fake_db_remove_user_from_channel(channel_id: str, user_id: str):
-        assert channel_id == "chan-1"
-        assert user_id == "user-123"
+    async def fake_remove_user_from_channel(payload):
+        assert payload.channel_id == "chan-1"
+        assert payload.user_id == "user-123"
         return fake_channel
 
-    monkeypatch.setattr(members_router, "db_remove_user_from_channel", fake_db_remove_user_from_channel)
+    monkeypatch.setattr(members_controller, "remove_user_from_channel", fake_remove_user_from_channel)
 
     body = {"channel_id": "chan-1", "user_id": "user-123"}
 
@@ -121,10 +121,10 @@ def test_remove_user_from_channel_success(client: TestClient, monkeypatch):
         assert data["_id"] == "chan-1"
 
 def test_remove_user_from_channel_not_found(client: TestClient, monkeypatch):
-    def fake_db_remove_user_from_channel(channel_id: str, user_id: str):
+    async def fake_remove_user_from_channel(payload):
         return None
 
-    monkeypatch.setattr(members_router, "db_remove_user_from_channel", fake_db_remove_user_from_channel)
+    monkeypatch.setattr(members_controller, "remove_user_from_channel", fake_remove_user_from_channel)
 
     body = {"channel_id": "chan-1", "user_id": "user-999"}
     response = client.request("DELETE", "/v1/members/", json=body)
@@ -134,7 +134,7 @@ def test_remove_user_from_channel_not_found(client: TestClient, monkeypatch):
 # -------------------- GET /v1/members/{user_id} -------------------- #
 
 def test_list_channels_by_member_success(client: TestClient, monkeypatch):
-    def fake_db_get_channels_by_member_id(user_id: str):
+    def fake_get_channels_by_member(user_id: str):
         assert user_id == "user-123"
         return [
             make_fake_basic_info(channel_id="chan-1"),
@@ -142,9 +142,9 @@ def test_list_channels_by_member_success(client: TestClient, monkeypatch):
         ]
 
     monkeypatch.setattr(
-        members_router,
-        "db_get_channels_by_member_id",
-        fake_db_get_channels_by_member_id,
+        members_controller,
+        "get_channels_by_member",
+        fake_get_channels_by_member,
     )
 
     response = client.get("/v1/members/user-123")
@@ -156,13 +156,13 @@ def test_list_channels_by_member_success(client: TestClient, monkeypatch):
 
 
 def test_list_channels_by_member_empty(client: TestClient, monkeypatch):
-    def fake_db_get_channels_by_member_id(user_id: str):
+    def fake_get_channels_by_member(user_id: str):
         return []
 
     monkeypatch.setattr(
-        members_router,
-        "db_get_channels_by_member_id",
-        fake_db_get_channels_by_member_id,
+        members_controller,
+        "get_channels_by_member",
+        fake_get_channels_by_member,
     )
 
     response = client.get("/v1/members/user-without-channels")
@@ -173,16 +173,16 @@ def test_list_channels_by_member_empty(client: TestClient, monkeypatch):
 # -------------------- GET /v1/members/owner/{owner_id} -------------------- #
 
 def test_list_channels_by_owner_success(client: TestClient, monkeypatch):
-    def fake_db_get_channels_by_owner_id(owner_id: str):
+    def fake_get_channels_by_owner(owner_id: str):
         assert owner_id == "owner-123"
         return [
             make_fake_basic_info(channel_id="chan-1", owner_id=owner_id),
         ]
 
     monkeypatch.setattr(
-        members_router,
-        "db_get_channels_by_owner_id",
-        fake_db_get_channels_by_owner_id,
+        members_controller,
+        "get_channels_by_owner",
+        fake_get_channels_by_owner,
     )
 
     response = client.get("/v1/members/owner/owner-123")
@@ -194,13 +194,13 @@ def test_list_channels_by_owner_success(client: TestClient, monkeypatch):
 
 
 def test_list_channels_by_owner_empty(client: TestClient, monkeypatch):
-    def fake_db_get_channels_by_owner_id(owner_id: str):
+    def fake_get_channels_by_owner(owner_id: str):
         return []
 
     monkeypatch.setattr(
-        members_router,
-        "db_get_channels_by_owner_id",
-        fake_db_get_channels_by_owner_id,
+        members_controller,
+        "get_channels_by_owner",
+        fake_get_channels_by_owner,
     )
 
     response = client.get("/v1/members/owner/no-channels")
@@ -211,14 +211,14 @@ def test_list_channels_by_owner_empty(client: TestClient, monkeypatch):
 # -------------------- GET /v1/members/channel/{channel_id} -------------------- #
 
 def test_list_members_by_channel_success(client: TestClient, monkeypatch):
-    def fake_db_get_channel_member_ids(channel_id: str, skip: int, limit: int):
+    def fake_get_channel_member_ids(channel_id: str, page: int, page_size: int):
         assert channel_id == "chan-1"
         return [make_fake_member("user-1"), make_fake_member("user-2")]
 
     monkeypatch.setattr(
-        members_router,
-        "db_get_channel_member_ids",
-        fake_db_get_channel_member_ids,
+        members_controller,
+        "get_channel_member_ids",
+        fake_get_channel_member_ids,
     )
 
     response = client.get("/v1/members/channel/chan-1?page=1&page_size=10")
@@ -254,7 +254,7 @@ def test_user_count_reflects_multiple_additions(client: TestClient, monkeypatch)
     
     call_count = {"count": 0}
     
-    def fake_db_add_user_to_channel(channel_id: str, user_id: str):
+    async def fake_add_user_to_channel(payload):
         call_count["count"] += 1
         if call_count["count"] == 1:
             return channel_2
@@ -262,7 +262,7 @@ def test_user_count_reflects_multiple_additions(client: TestClient, monkeypatch)
             return channel_3
         return None
 
-    monkeypatch.setattr(members_router, "db_add_user_to_channel", fake_db_add_user_to_channel)
+    monkeypatch.setattr(members_controller, "add_user_to_channel", fake_add_user_to_channel)
 
     # Primera adición
     body = {"channel_id": "chan-1", "user_id": "user-1"}

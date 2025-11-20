@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.schemas.channels import Channel
 from app.schemas.responses import ChannelBasicInfoResponse
-from app.routers.v1 import channels as channels_router
+from app.controllers import channels as channels_controller
 
 
 # --------- Helpers para armar objetos falsos (Pydantic) --------- #
@@ -57,10 +57,10 @@ def make_fake_basic_info(
 def test_create_channel_success(client: TestClient, monkeypatch):
     fake_channel = make_fake_channel()
 
-    def fake_db_create_channel(payload):
+    async def fake_create_channel(payload):
         return fake_channel
 
-    monkeypatch.setattr(channels_router, "db_create_channel", fake_db_create_channel)
+    monkeypatch.setattr(channels_controller, "create_channel", fake_create_channel)
 
     body = {
         "name": "general",
@@ -91,16 +91,16 @@ def test_create_channel_validation_error(client: TestClient):
 # -------------------- GET /v1/channels/ -------------------- #
 
 def test_list_channels_success(client: TestClient, monkeypatch):
-    def fake_db_get_all_channels_paginated(skip: int, limit: int):
+    def fake_list_channels(page: int, page_size: int):
         return [
             make_fake_basic_info(channel_id="1", name="general"),
             make_fake_basic_info(channel_id="2", name="random"),
         ]
 
     monkeypatch.setattr(
-        channels_router,
-        "db_get_all_channels_paginated",
-        fake_db_get_all_channels_paginated,
+        channels_controller,
+        "list_channels",
+        fake_list_channels,
     )
 
     response = client.get("/v1/channels/?page=1&page_size=10")
@@ -122,11 +122,11 @@ def test_list_channels_invalid_page_size(client: TestClient):
 def test_get_channel_by_id_success(client: TestClient, monkeypatch):
     fake_channel = make_fake_channel(channel_id="abc123")
 
-    def fake_db_get_channel_by_id(channel_id: str):
+    def fake_get_channel(channel_id: str):
         assert channel_id == "abc123"
         return fake_channel
 
-    monkeypatch.setattr(channels_router, "db_get_channel_by_id", fake_db_get_channel_by_id)
+    monkeypatch.setattr(channels_controller, "get_channel", fake_get_channel)
 
     response = client.get("/v1/channels/abc123")
     assert response.status_code == 200
@@ -138,10 +138,10 @@ def test_get_channel_by_id_success(client: TestClient, monkeypatch):
 
 
 def test_get_channel_by_id_not_found(client: TestClient, monkeypatch):
-    def fake_db_get_channel_by_id(channel_id: str):
+    def fake_get_channel(channel_id: str):
         return None
 
-    monkeypatch.setattr(channels_router, "db_get_channel_by_id", fake_db_get_channel_by_id)
+    monkeypatch.setattr(channels_controller, "get_channel", fake_get_channel)
 
     response = client.get("/v1/channels/non-existent")
     assert response.status_code == 404
@@ -150,10 +150,10 @@ def test_get_channel_by_id_not_found(client: TestClient, monkeypatch):
 # -------------------- PUT /v1/channels/{channel_id} -------------------- #
 
 def test_update_channel_success(client: TestClient, monkeypatch):
-    def fake_db_update_channel(channel_id: str, update_data):
+    async def fake_update_channel(channel_id: str, update_data):
         return make_fake_channel(channel_id=channel_id, name="nuevo-nombre")
 
-    monkeypatch.setattr(channels_router, "db_update_channel", fake_db_update_channel)
+    monkeypatch.setattr(channels_controller, "update_channel", fake_update_channel)
 
     body = {"name": "nuevo-nombre"}
 
@@ -166,10 +166,10 @@ def test_update_channel_success(client: TestClient, monkeypatch):
 
 
 def test_update_channel_not_found(client: TestClient, monkeypatch):
-    def fake_db_update_channel(channel_id: str, update_data):
+    async def fake_update_channel(channel_id: str, update_data):
         return None
 
-    monkeypatch.setattr(channels_router, "db_update_channel", fake_db_update_channel)
+    monkeypatch.setattr(channels_controller, "update_channel", fake_update_channel)
 
     response = client.put("/v1/channels/no-existe", json={"name": "x"})
     assert response.status_code == 404
@@ -179,15 +179,12 @@ def test_update_channel_not_found(client: TestClient, monkeypatch):
 
 def test_deactivate_channel_success(client: TestClient, monkeypatch):
     active_channel = make_fake_channel(is_active=True)
+    inactive_channel = make_fake_channel(channel_id="abc123", is_active=False)
 
-    def fake_db_get_channel_by_id(channel_id: str):
-        return active_channel
+    async def fake_delete_channel(channel_id: str):
+        return active_channel, inactive_channel
 
-    def fake_db_deactivate_channel(channel_id: str):
-        return make_fake_channel(channel_id=channel_id, is_active=False)
-
-    monkeypatch.setattr(channels_router, "db_get_channel_by_id", fake_db_get_channel_by_id)
-    monkeypatch.setattr(channels_router, "db_deactivate_channel", fake_db_deactivate_channel)
+    monkeypatch.setattr(channels_controller, "delete_channel", fake_delete_channel)
 
     response = client.delete("/v1/channels/abc123")
     assert response.status_code in (200, 204)
@@ -201,10 +198,10 @@ def test_deactivate_channel_success(client: TestClient, monkeypatch):
 def test_deactivate_channel_already_inactive(client: TestClient, monkeypatch):
     inactive_channel = make_fake_channel(is_active=False)
 
-    def fake_db_get_channel_by_id(channel_id: str):
-        return inactive_channel
+    async def fake_delete_channel(channel_id: str):
+        return inactive_channel, None
 
-    monkeypatch.setattr(channels_router, "db_get_channel_by_id", fake_db_get_channel_by_id)
+    monkeypatch.setattr(channels_controller, "delete_channel", fake_delete_channel)
 
     response = client.delete("/v1/channels/abc123")
     assert response.status_code == 409
@@ -213,16 +210,12 @@ def test_deactivate_channel_already_inactive(client: TestClient, monkeypatch):
 # -------------------- POST /v1/channels/{channel_id}/reactivate -------------------- #
 
 def test_reactivate_channel_success(client: TestClient, monkeypatch):
-    inactive_channel = make_fake_channel(is_active=False)
+    active_channel = make_fake_channel(channel_id="abc123", is_active=True)
 
-    def fake_db_get_channel_by_id(channel_id: str):
-        return inactive_channel
+    async def fake_reactivate_channel(channel_id: str):
+        return active_channel, False
 
-    def fake_db_reactivate_channel(channel_id: str):
-        return make_fake_channel(channel_id=channel_id, is_active=True)
-
-    monkeypatch.setattr(channels_router, "db_get_channel_by_id", fake_db_get_channel_by_id)
-    monkeypatch.setattr(channels_router, "db_reactivate_channel", fake_db_reactivate_channel)
+    monkeypatch.setattr(channels_controller, "reactivate_channel", fake_reactivate_channel)
 
     response = client.post("/v1/channels/abc123/reactivate")
     assert response.status_code in (200, 201)
@@ -235,10 +228,10 @@ def test_reactivate_channel_success(client: TestClient, monkeypatch):
 def test_reactivate_channel_already_active(client: TestClient, monkeypatch):
     active_channel = make_fake_channel(is_active=True)
 
-    def fake_db_get_channel_by_id(channel_id: str):
-        return active_channel
+    async def fake_reactivate_channel(channel_id: str):
+        return active_channel, True
 
-    monkeypatch.setattr(channels_router, "db_get_channel_by_id", fake_db_get_channel_by_id)
+    monkeypatch.setattr(channels_controller, "reactivate_channel", fake_reactivate_channel)
 
     response = client.post("/v1/channels/abc123/reactivate")
     assert response.status_code == 409
@@ -249,13 +242,13 @@ def test_reactivate_channel_already_active(client: TestClient, monkeypatch):
 def test_get_basic_channel_info_success(client: TestClient, monkeypatch):
     fake_basic = make_fake_basic_info(channel_id="abc123", name="general")
 
-    def fake_db_get_basic_channel_info(channel_id: str):
+    def fake_get_channel_basic_info(channel_id: str):
         return fake_basic
 
     monkeypatch.setattr(
-        channels_router,
-        "db_get_basic_channel_info",
-        fake_db_get_basic_channel_info,
+        channels_controller,
+        "get_channel_basic_info",
+        fake_get_channel_basic_info,
     )
 
     response = client.get("/v1/channels/abc123/basic")
@@ -267,13 +260,13 @@ def test_get_basic_channel_info_success(client: TestClient, monkeypatch):
 
 
 def test_get_basic_channel_info_not_found(client: TestClient, monkeypatch):
-    def fake_db_get_basic_channel_info(channel_id: str):
+    def fake_get_channel_basic_info(channel_id: str):
         return None
 
     monkeypatch.setattr(
-        channels_router,
-        "db_get_basic_channel_info",
-        fake_db_get_basic_channel_info,
+        channels_controller,
+        "get_channel_basic_info",
+        fake_get_channel_basic_info,
     )
 
     response = client.get("/v1/channels/no-existe/basic")
