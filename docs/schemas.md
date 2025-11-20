@@ -93,6 +93,7 @@ Esquema con información básica de un canal.
   - `owner_id` (string): ID del propietario.
   - `channel_type` (`ChannelType`): Tipo de canal.
   - `created_at` (float): Timestamp de creación.
+  - `user_count` (int): Cantidad de usuarios en el canal.
 
 ### `ErrorResponse`
 

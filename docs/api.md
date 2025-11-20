@@ -38,6 +38,26 @@ Crea un nuevo canal.
   }
   ```
 
+### `GET /v1/channels/`
+
+Obtiene una lista paginada de información básica de todos los canales.
+
+- **Parámetros de Query:**
+  - `page` (int, opcional): Número de página (default: 1, mínimo: 1).
+  - `page_size` (int, opcional): Cantidad de elementos por página (default: 10, mínimo: 1, máximo: 100).
+- **Respuesta Exitosa (200, `list[ChannelBasicInfoResponse]`):**
+  ```json
+  [
+    {
+      "id": "string",
+      "name": "string",
+      "owner_id": "string",
+      "channel_type": "public",
+      "created_at": "float"
+    }
+  ]
+  ```
+
 ### `GET /v1/channels/{channel_id}`
 
 Obtiene un canal por su ID.
@@ -103,6 +123,15 @@ Obtiene información básica de un canal.
     "created_at": "float"
   }
   ```
+
+### `GET /v1/channels/{channel_id}/status`
+
+Verifica si un canal está activo.
+
+- **Parámetros de Ruta:**
+  - `channel_id` (string): El ID del canal.
+- **Respuesta Exitosa (200, `bool`):**
+  - Devuelve `true` si el canal está activo, `false` si está desactivado.
 
 ## Miembros
 
