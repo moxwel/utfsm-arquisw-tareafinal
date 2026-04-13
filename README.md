@@ -2,9 +2,9 @@
 
 Este proyecto es un servicio (API) en FastAPI para gestión de canales y miembros para un sistema de chat ficticio. El servicio cuenta con persistencia de datos en MongoDB y mensajería de eventos vía RabbitMQ.
 
-- Maximiliano Sepúlveda - ROL: 201973536-5
-- Felipe Mellado - ROL: 201973525-K
-- Cristopher Fuentes Llantén - ROL: 201973598-5
+- Maximiliano Sepúlveda
+- Felipe Mellado
+- Cristopher Fuentes Llantén
 
 ## REQUERIMIENTOS
 
